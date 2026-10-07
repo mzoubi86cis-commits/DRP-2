@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام الحضور والغياب - BTEC</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!-- مكتبة قراءة ملفات Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ===================== شاشة الدخول ===================== -->
+<div id="loginScreen">
+    <div class="login-box">
+        <span class="logo">🔐</span>
+        <h1>مدرسة الطرة الثانوية للبنين</h1>
+        <p class="subtitle">نظام الحضور والغياب - BTEC</p>
+
+        <!-- خطوة إعداد السحابة -->
+        <div id="setupStep" style="display: none;">
+            <p class="setup-title">⚙️ إعداد الاتصال السحابي (لأول مرة فقط)</p>
+            <label for="masterKeyInput">X-Master-Key</label>
+            <input type="text" id="masterKeyInput" placeholder="$2a$10$..." autocomplete="off">
+            <label for="binIdInput">Bin ID</label>
+            <input type="text" id="binIdInput" placeholder="65f1a2b3..." autocomplete="off">
+            <button id="setupBtn">💾 حفظ الإعدادات</button>
+            <div class="login-error" id="setupError"></div>
+            <div class="login-hint">
+                💡 افتح <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> للحصول على المفاتيح.
+            </div>
+        </div>
+
+        <!-- خطوة كلمة المرور -->
+        <div id="passwordStep" style="display: none;">
+            <label for="usernameInput">اسم المستخدم</label>
+            <input type="text" id="usernameInput" placeholder="it12" autocomplete="off">
+            <label for="passwordInput">كلمة المرور</label>
+            <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="off">
+            <button id="loginBtn">🔓 دخول</button>
+            <div class="login-error" id="loginError">❌ بيانات الدخول غير صحيحة</div>
+            <div class="login-hint">
+                💡 هذا النظام محمي. الدخول للمعلمين والإدارة فقط.
+                <br><a href="#" id="resetSettingsLink">⚙️ إعادة إعداد الاتصال السحابي</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== التطبيق الرئيسي ===================== -->
+<div id="mainApp" style="display:none;">
+
+<header>
+    <div class="container">
+        <div class="header-top">
+            <div>
+                <h1>🏫 مدرسة الطرة الثانوية للبنين</h1>
+                <p id="headerSubtitle">نظام الحضور والغياب - BTEC</p>
+            </div>
+            <div class="user-info">
+                <span id="userBadge" class="user-badge">👤 مستخدم</span>
+                <button class="btn btn-danger btn-small" id="logoutBtn">🚪 خروج</button>
+            </div>
+        </div>
+        <nav id="mainNav">
+            <button class="nav-btn active" data-page="home">🏠 الرئيسية</button>
+            <button class="nav-btn" data-page="daily">📝 التسجيل اليومي</button>
+            <button class="nav-btn" data-page="reports">📊 التقارير</button>
+            <button class="nav-btn" data-page="alerts">🔔 التنبيهات</button>
+            <button class="nav-btn admin-only" data-page="students-admin">👥 إدارة الطلاب</button>
+            <button class="nav-btn admin-only" data-page="users-admin">🔑 إدارة المستخدمين</button>
+            <button class="nav-btn" data-page="backup">💾 النسخ الاحتياطي</button>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- ============ الرئيسية ============ -->
+    <section id="page-home" class="page active">
+        <div class="class-selector" id="classSelector"></div>
+        <div class="stats-cards" id="statsCards"></div>
+        <div class="toolbar">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="navigate('daily')">📝 التسجيل اليومي</button>
+                <button class="btn btn-info" onclick="syncFromCloud()">🔄 مزامنة من السحابة</button>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span class="sync-badge synced" id="syncStatus">✅ متزامن</span>
+                <span class="today-badge" id="todayBadge"></span>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;">#</th>
+                        <th>اسم الطالب</th>
+                        <th>رقم الطالب</th>
+                        <th>غائب</th>
+                        <th>بعذر</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTable"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ التسجيل اليومي ============ -->
+    <section id="page-daily" class="page">
+        <h2 class="page-title">📝 التسجيل اليومي</h2>
+        <div class="daily-panel">
+            <div class="daily-controls">
+                <label>📅 التاريخ: <input type="date" id="dailyDate"></label>
+                <button class="btn btn-secondary" onclick="setDateToday()">اليوم</button>
+                <button class="btn btn-secondary" onclick="changeDay(-1)">⬅️ يوم سابق</button>
+                <button class="btn btn-secondary" onclick="changeDay(1)">يوم تالٍ ➡️</button>
+                <button class="btn btn-success" onclick="saveDailyRecord()">💾 حفظ في السحابة</button>
+            </div>
+            <div class="bulk-actions">
+                <button class="btn btn-success btn-small" onclick="markAll('present')">✅ الكل حاضر</button>
+                <button class="btn btn-danger btn-small" onclick="markAll('absent')">❌ الكل غائب</button>
+                <button class="btn btn-info btn-small" onclick="markAll('excused')">📝 الكل بعذر</button>
+                <button class="btn btn-secondary btn-small" onclick="resetAll()">🔄 مسح التحديد</button>
+            </div>
+            <div class="daily-info">
+                <span>📊 الحاضر: <strong id="cPresent">0</strong></span>
+                <span>❌ الغائب: <strong id="cAbsent">0</strong></span>
+                <span>📝 بعذر: <strong id="cExcused">0</strong></span>
+                <span>❓ لم يسجل: <strong id="cUnset">0</strong></span>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;">#</th>
+                        <th>اسم الطالب</th>
+                        <th>رقم الطالب</th>
+                        <th style="min-width:280px;">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody id="dailyTable"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ التقارير ============ -->
+    <section id="page-reports" class="page">
+        <h2 class="page-title">📊 التقارير</h2>
+        <div class="filter-form">
+            <label>من تاريخ: <input type="date" id="repStart" value="2026-08-23"></label>
+            <label>إلى تاريخ: <input type="date" id="repEnd" value="2027-06-18"></label>
+            <label>نوع الحساب:
+                <select id="repMode">
+                    <option value="all">جميع السجلات</option>
+                    <option value="absent">الغياب فقط (بدون عذر)</option>
+                    <option value="excused">بعذر فقط</option>
+                </select>
+            </label>
+            <button class="btn btn-primary" onclick="renderReports()">🔍 عرض</button>
+            <button class="btn btn-secondary" onclick="exportReportCSV()">📥 تصدير CSV</button>
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ طباعة</button>
+        </div>
+        <div id="reportsSummary" class="alert alert-info"></div>
+        <div id="reportsContainer"></div>
+    </section>
+
+    <!-- ============ التنبيهات ============ -->
+    <section id="page-alerts" class="page">
+        <h2 class="page-title">🔔 التنبيهات والإنذارات</h2>
+        <div class="alert alert-info">ℹ️ يتم احتساب التنبيهات على <strong>الغياب بدون عذر فقط</strong>.</div>
+        <div id="alertsList"></div>
+    </section>
+
+    <!-- ============ إدارة الطلاب (للمدير فقط) ============ -->
+    <section id="page-students-admin" class="page">
+        <h2 class="page-title">👥 إدارة الطلاب</h2>
+
+        <div class="admin-panel">
+            <label>اختر الصف:
+                <select id="adminClassSelect"></select>
+            </label>
+        </div>
+
+        <div class="admin-grid">
+            <!-- إضافة طالب يدوياً -->
+            <div class="admin-card">
+                <h3>➕ إضافة طالب</h3>
+                <label>الاسم بالعربية</label>
+                <input type="text" id="addNameAr" placeholder="مثال: احمد زياد محمود">
+                <label>الاسم بالإنجليزية</label>
+                <input type="text" id="addNameEn" placeholder="Ahmad Zyad" style="direction:ltr; text-align:left;">
+                <label>رقم الطالب</label>
+                <input type="text" id="addNumber" placeholder="UD90702" style="direction:ltr; text-align:left;">
+                <button class="btn btn-success" onclick="addStudentManual()">💾 إضافة</button>
+                <div id="addStudentMsg" class="msg-area"></div>
+            </div>
+
+            <!-- استيراد Excel -->
+            <div class="admin-card">
+                <h3>📥 استيراد من Excel</h3>
+                <p class="hint">الملف يجب أن يحتوي على 3 أعمدة: الاسم بالعربية، الاسم بالإنجليزية، رقم الطالب</p>
+                <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                <button class="btn btn-primary" onclick="importFromExcel()">📤 استيراد</button>
+                <button class="btn btn-secondary btn-small" onclick="Students.downloadTemplate()">📋 تحميل قالب</button>
+                <div id="importMsg" class="msg-area"></div>
+            </div>
+        </div>
+
+        <h3 style="margin-top:30px; color:var(--primary-light);">📋 قائمة الطلاب</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;">#</th>
+                        <th>اسم الطالب</th>
+                        <th>الاسم بالإنجليزية</th>
+                        <th>رقم الطالب</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="adminStudentsTable"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ إدارة المستخدمين (للمدير فقط) ============ -->
+    <section id="page-users-admin" class="page">
+        <h2 class="page-title">🔑 إدارة المستخدمين</h2>
+
+        <div class="admin-card" style="max-width:600px;">
+            <h3>➕ إضافة مستخدم</h3>
+            <label>اسم المستخدم</label>
+            <input type="text" id="newUsername" placeholder="it10">
+            <label>كلمة المرور</label>
+            <input type="text" id="newPassword" placeholder="••••••••">
+            <label>الاسم الكامل</label>
+            <input type="text" id="newFullName" placeholder="أ. منذر الزعبي">
+            <label>الدور</label>
+            <select id="newRole">
+                <option value="teacher">معلم</option>
+                <option value="admin">مدير</option>
+            </select>
+            <label>الصف (للمعلم فقط)</label>
+            <select id="newClassId"></select>
+            <button class="btn btn-success" onclick="addUserManual()">💾 إضافة</button>
+            <div id="addUserMsg" class="msg-area"></div>
+        </div>
+
+        <h3 style="margin-top:30px; color:var(--primary-light);">👥 قائمة المستخدمين</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>اسم المستخدم</th>
+                        <th>الاسم</th>
+                        <th>الدور</th>
+                        <th>الصف</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ النسخ الاحتياطي ============ -->
+    <section id="page-backup" class="page">
+        <h2 class="page-title">💾 النسخ الاحتياطي</h2>
+        <div class="alert alert-info">ℹ️ البيانات محفوظة في السحابة (JSONBin.io). استخدم هذه الصفحة لنسخة إضافية.</div>
+
+        <div class="admin-card" style="max-width:600px; margin-bottom:15px;">
+            <h3>📤 تصدير نسخة احتياطية</h3>
+            <p class="hint">يحفظ جميع الطلاب والسجلات والمستخدمين في ملف JSON.</p>
+            <button class="btn btn-primary" onclick="exportBackup()">📥 تنزيل</button>
+        </div>
+
+        <div class="admin-card" style="max-width:600px;">
+            <h3>📥 استعادة نسخة احتياطية</h3>
+            <p class="hint">اختر ملف JSON لاستعادة البيانات.</p>
+            <input type="file" id="importFile" accept=".json">
+            <br>
+            <button class="btn btn-success" onclick="importBackup()">⬆️ استعادة</button>
+        </div>
+    </section>
+
+    <!-- ============ صفحة الطالب ============ -->
+    <section id="page-student" class="page"></section>
+
+</main>
+
+<footer>© 2026-2027 - مدرسة الطرة الثانوية للبنين | نظام BTEC</footer>
+</div>
+
+<!-- ===================== نافذة الإنذار ===================== -->
+<div class="warning-modal" id="warningModal">
+    <div class="warning-paper" id="warningPaper"></div>
+</div>
+
+<!-- ===================== السكربتات ===================== -->
+<script src="config.js"></script>
+<script src="cloud.js"></script>
+<script src="students.js"></script>
+<script src="attendance.js"></script>
+<script src="reports.js"></script>
+<script src="admin.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
