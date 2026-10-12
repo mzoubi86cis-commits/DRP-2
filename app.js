@@ -788,11 +788,27 @@ function renderAll() {
         }
     }
 
-    function showPassword() {
-        document.getElementById("setupStep").style.display = "none";
-        document.getElementById("passwordStep").style.display = "block";
-        setTimeout(function() { document.getElementById("usernameInput").focus(); }, 200);
-    }
+   function showPassword() {
+    document.getElementById("setupStep").style.display = "none";
+    document.getElementById("passwordStep").style.display = "block";
+    setTimeout(function() { document.getElementById("usernameInput").focus(); }, 200);
+    
+    // توليد QR Code
+    setTimeout(function() {
+        const qrContainer = document.getElementById("qrCode");
+        if (qrContainer && typeof QRCode !== "undefined") {
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: window.location.href,
+                width: 140,
+                height: 140,
+                colorDark: "#1e3c72",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+    }, 300);
+}
 
     async function saveSetup() {
         const mk = document.getElementById("masterKeyInput").value.trim();
