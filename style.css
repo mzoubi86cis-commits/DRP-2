@@ -546,11 +546,131 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
 .warning-actions { display: flex; gap: 10px; justify-content: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0e4e8; }
 
 @media print {
+    @page {
+        size: A4;
+        margin: 10mm 12mm;
+    }
+    
     body * { visibility: hidden; }
     .warning-paper, .warning-paper * { visibility: visible; }
-    .warning-paper { position: absolute; top: 0; right: 0; left: 0; margin: 0; padding: 20px; box-shadow: none; border-radius: 0; }
+    
+    .warning-paper {
+        position: absolute;
+        top: 0; right: 0; left: 0;
+        margin: 0;
+        padding: 8mm 10mm;
+        box-shadow: none;
+        border-radius: 0;
+        font-size: 10pt;
+        line-height: 1.5;
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    /* تصغير الترويسة */
+    .warning-paper .letterhead {
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+    }
+    .warning-paper .letterhead .school-name {
+        font-size: 15pt;
+        margin-bottom: 3px;
+    }
+    .warning-paper .letterhead .school-info {
+        font-size: 8.5pt;
+    }
+    .warning-paper .letterhead .ref {
+        margin-top: 6px;
+        font-size: 8.5pt;
+    }
+    
+    /* تصغير عنوان الإنذار */
+    .warning-title {
+        font-size: 13pt;
+        padding: 6px;
+        margin: 10px 0;
+    }
+    
+    /* تصغير بيانات الطالب */
+    .student-info-box {
+        padding: 8px 12px;
+        margin-bottom: 12px;
+    }
+    .student-info-box td {
+        padding: 3px 6px;
+        font-size: 9pt;
+    }
+    .student-info-box td.label {
+        width: 100px;
+        font-size: 9pt;
+    }
+    
+    /* تصغير نص الإنذار */
+    .warning-body {
+        font-size: 10pt;
+        line-height: 1.7;
+        margin: 10px 0;
+    }
+    .warning-body p {
+        margin-bottom: 6px;
+        text-indent: 20px;
+    }
+    .warning-body .number-badge {
+        padding: 1px 8px;
+        font-size: 9pt;
+    }
+    
+    /* تصغير التوصيات */
+    .recommendations {
+        padding: 8px 15px;
+        margin: 10px 0;
+    }
+    .recommendations h4 {
+        font-size: 10pt;
+        margin-bottom: 5px;
+    }
+    .recommendations ul {
+        padding-right: 20px;
+    }
+    .recommendations li {
+        font-size: 9pt;
+        margin-bottom: 2px;
+    }
+    
+    /* تصغير التوقيعات */
+    .signatures {
+        margin-top: 15px;
+        padding-top: 8px;
+        gap: 10px;
+    }
+    .signatures .sig-box {
+        padding: 5px;
+    }
+    .signatures .sig-title {
+        font-size: 9.5pt;
+        margin-bottom: 20px;
+    }
+    .signatures .sig-line {
+        font-size: 9.5pt;
+        padding-top: 4px;
+    }
+    
+    /* تصغير باقي العناصر */
+    .warning-date {
+        margin-top: 10px;
+        font-size: 8.5pt;
+    }
+    
     .warning-actions { display: none !important; }
     .warning-modal { background: white; position: static; padding: 0; }
+    
+    /* التأكد من عدم كسر الصفحة */
+    .warning-paper,
+    .warning-body,
+    .recommendations,
+    .signatures {
+        page-break-inside: avoid;
+    }
 }
 
 /* ===================== التجاوب ===================== */
