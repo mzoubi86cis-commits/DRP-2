@@ -103,6 +103,6 @@ function getClassById(id) {
    🔑 مفاتيح JSONBin المضمنة (تلقائياً لكل الأجهزة)
    ========================================================================== */
 const EMBEDDED_CLOUD_SETTINGS = {
-    masterKey: "$2a$10$uAozRDoWyFQDRxHFus7lje5LS6VZbpjk7S51",
-    binId:     "6abe1463ac6210605a083f16"
+    masterKey: "$2a$10$uAozRDoWyFQDRxHFus7Ije5LS6VZbpjk7S51sHOny3mo3YLH1PUjy",
+    binId:     "6ac60485ffd5d16053554f0e"
 };
