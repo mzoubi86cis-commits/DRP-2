@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="style.css">
 <!-- مكتبة قراءة ملفات Excel -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -46,6 +47,13 @@
             </div>
         </div>
     </div>
+    <!-- QR Code للوصول السريع -->
+<div id="qrSection" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+    <p style="font-size: 0.85em; color: var(--muted); margin-bottom: 8px;">
+        📱 امسح الرمز من جوالك للدخول
+    </p>
+    <div id="qrCode" style="display: flex; justify-content: center;"></div>
+</div>
 </div>
 
 <!-- ===================== التطبيق الرئيسي ===================== -->
