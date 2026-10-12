@@ -34,8 +34,12 @@
         </div>
 
         <!-- خطوة كلمة المرور -->
-        <div id="passwordStep" style="display: none;">
-            <label for="usernameInput">اسم المستخدم</label>
+<div id="passwordStep" style="display: none; position: relative;">
+    <!-- QR في الزاوية -->
+    <div id="qrSection" style="position: absolute; top: 0; left: 0; text-align: center;">
+        <div id="qrCode" style="display: inline-block;"></div>
+        <div style="font-size: 0.65em; color: var(--muted); margin-top: 3px;">امسح للدخول</div>
+    </div>            <label for="usernameInput">اسم المستخدم</label>
             <input type="text" id="usernameInput" placeholder="it12" autocomplete="off">
             <label for="passwordInput">كلمة المرور</label>
             <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="off">
