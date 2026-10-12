@@ -546,130 +546,177 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
 .warning-actions { display: flex; gap: 10px; justify-content: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0e4e8; }
 
 @media print {
+    /* ضبط حجم الورقة */
     @page {
-        size: A4;
-        margin: 10mm 12mm;
+        size: A4 portrait;
+        margin: 8mm 10mm;
     }
     
-    body * { visibility: hidden; }
-    .warning-paper, .warning-paper * { visibility: visible; }
+    /* إخفاء كل شيء */
+    html, body {
+        width: 100%;
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+    
+    body * { 
+        visibility: hidden; 
+    }
+    
+    /* إظهار النموذج فقط */
+    .warning-paper, 
+    .warning-paper * { 
+        visibility: visible; 
+    }
+    
+    /* ✅ إخفاء النافذة المنبثقة (هذا هو الحل!) */
+    .warning-modal {
+        position: static !important;
+        inset: auto !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+        min-height: 0 !important;
+        height: auto !important;
+    }
+    
+    /* ✅ إخفاء كل الصفحات الأخرى */
+    header, nav, footer, main, .page, #loginScreen, #mainApp {
+        display: none !important;
+    }
+    
+    /* ✅ إظهار النموذج فقط */
+    .warning-modal {
+        display: block !important;
+    }
     
     .warning-paper {
-        position: absolute;
-        top: 0; right: 0; left: 0;
-        margin: 0;
-        padding: 8mm 10mm;
-        box-shadow: none;
-        border-radius: 0;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        margin: 0 auto !important;
+        padding: 5mm 8mm !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
         font-size: 10pt;
         line-height: 1.5;
-        max-width: 100%;
-        width: 100%;
+        max-width: 100% !important;
+        width: 100% !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
     }
     
-    /* تصغير الترويسة */
+    /* تنسيق الترويسة */
     .warning-paper .letterhead {
-        padding-bottom: 8px;
-        margin-bottom: 12px;
+        padding-bottom: 6px !important;
+        margin-bottom: 10px !important;
     }
     .warning-paper .letterhead .school-name {
         font-size: 15pt;
-        margin-bottom: 3px;
+        margin-bottom: 2px;
     }
     .warning-paper .letterhead .school-info {
         font-size: 8.5pt;
     }
     .warning-paper .letterhead .ref {
-        margin-top: 6px;
+        margin-top: 5px;
         font-size: 8.5pt;
     }
     
-    /* تصغير عنوان الإنذار */
+    /* عنوان الإنذار */
     .warning-title {
         font-size: 13pt;
-        padding: 6px;
-        margin: 10px 0;
+        padding: 5px;
+        margin: 8px 0;
     }
     
-    /* تصغير بيانات الطالب */
+    /* بيانات الطالب */
     .student-info-box {
-        padding: 8px 12px;
-        margin-bottom: 12px;
+        padding: 6px 10px;
+        margin-bottom: 8px;
     }
     .student-info-box td {
-        padding: 3px 6px;
+        padding: 2px 5px;
         font-size: 9pt;
     }
     .student-info-box td.label {
-        width: 100px;
+        width: 90px;
         font-size: 9pt;
     }
     
-    /* تصغير نص الإنذار */
+    /* نص الإنذار */
     .warning-body {
         font-size: 10pt;
-        line-height: 1.7;
-        margin: 10px 0;
+        line-height: 1.6;
+        margin: 8px 0;
     }
     .warning-body p {
-        margin-bottom: 6px;
-        text-indent: 20px;
+        margin-bottom: 5px;
+        text-indent: 15px;
     }
     .warning-body .number-badge {
-        padding: 1px 8px;
+        padding: 1px 6px;
         font-size: 9pt;
     }
     
-    /* تصغير التوصيات */
+    /* التوصيات */
     .recommendations {
-        padding: 8px 15px;
-        margin: 10px 0;
+        padding: 6px 12px;
+        margin: 8px 0;
     }
     .recommendations h4 {
         font-size: 10pt;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
     }
     .recommendations ul {
-        padding-right: 20px;
+        padding-right: 18px;
     }
     .recommendations li {
         font-size: 9pt;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
     }
     
-    /* تصغير التوقيعات */
+    /* التوقيعات */
     .signatures {
-        margin-top: 15px;
-        padding-top: 8px;
-        gap: 10px;
+        margin-top: 12px;
+        padding-top: 6px;
+        gap: 8px;
+        page-break-inside: avoid;
     }
     .signatures .sig-box {
-        padding: 5px;
+        padding: 3px;
     }
     .signatures .sig-title {
         font-size: 9.5pt;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     .signatures .sig-line {
         font-size: 9.5pt;
-        padding-top: 4px;
+        padding-top: 3px;
     }
     
-    /* تصغير باقي العناصر */
+    /* التاريخ أسفل */
     .warning-date {
-        margin-top: 10px;
+        margin-top: 8px;
         font-size: 8.5pt;
     }
     
-    .warning-actions { display: none !important; }
-    .warning-modal { background: white; position: static; padding: 0; }
+    /* إخفاء الأزرار */
+    .warning-actions {
+        display: none !important;
+    }
     
-    /* التأكد من عدم كسر الصفحة */
-    .warning-paper,
-    .warning-body,
-    .recommendations,
-    .signatures {
-        page-break-inside: avoid;
+    /* التأكد من عدم وجود صفحات إضافية */
+    .warning-paper::after,
+    .warning-modal::after {
+        display: none !important;
+        content: none !important;
     }
 }
 
