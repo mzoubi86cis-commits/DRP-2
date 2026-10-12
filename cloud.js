@@ -4,11 +4,28 @@
 
 const Cloud = {
     // الحصول على الإعدادات المحفوظة
-    getSettings: function() {
+    // الحصول على الإعدادات المحفوظة أو المضمنة
+getSettings: function() {
+    // أولاً: تحقق من localStorage
+    try {
+        const stored = JSON.parse(localStorage.getItem(CLOUD_CONFIG.STORAGE_KEY) || "null");
+        if (stored && stored.masterKey && stored.binId) {
+            return stored;
+        }
+    } catch(e) {}
+    
+    // ثانياً: استخدم المفاتيح المضمنة في config.js
+    if (typeof EMBEDDED_CLOUD_SETTINGS !== "undefined" &&
+        EMBEDDED_CLOUD_SETTINGS.masterKey && EMBEDDED_CLOUD_SETTINGS.binId) {
+        // احفظها في localStorage للاستخدام المستقبلي
         try {
-            return JSON.parse(localStorage.getItem(CLOUD_CONFIG.STORAGE_KEY) || "null");
-        } catch(e) { return null; }
-    },
+            localStorage.setItem(CLOUD_CONFIG.STORAGE_KEY, JSON.stringify(EMBEDDED_CLOUD_SETTINGS));
+        } catch(e) {}
+        return EMBEDDED_CLOUD_SETTINGS;
+    }
+    
+    return null;
+},
 
     // حفظ الإعدادات
     saveSettings: function(settings) {
