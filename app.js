@@ -991,3 +991,28 @@ async function startApp() {
         alert("حدث خطأ: " + err.message);
     }
 }
+
+
+// إعادة إعداد الاتصال السحابي (للمدير فقط)
+function resetCloudSettings() {
+    if (!State.currentUser || State.currentUser.role !== "admin") {
+        alert("❌ هذه الميزة للمدير فقط");
+        return;
+    }
+    
+    if (!confirm("⚠️ سيتم حذف إعدادات JSONBin.\n\nهل أنت متأكد؟\n\nملاحظة: البيانات في السحابة لن تُحذف، لكن ستحتاج لإعادة إدخال المفاتيح.")) {
+        return;
+    }
+    
+    if (!confirm("⚠️ تأكيد نهائي:\n\nسيتم تسجيل خروجك وإعادة فتح شاشة الإعداد.")) {
+        return;
+    }
+    
+    // امسح الإعدادات والجلسة
+    Cloud.clearSettings();
+    try {
+        localStorage.removeItem(CLOUD_CONFIG.SESSION_KEY);
+    } catch(e) {}
+    
+    location.reload();
+}
