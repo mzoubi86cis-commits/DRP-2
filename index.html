@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="style.css">
 <!-- مكتبة قراءة ملفات Excel -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- مكتبة QR Code -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -34,28 +35,38 @@
         </div>
 
         <!-- خطوة كلمة المرور -->
-<div id="passwordStep" style="display: none; position: relative;">
-    <!-- QR في الزاوية -->
-    <div id="qrSection" style="position: absolute; top: 0; left: 0; text-align: center;">
-        <div id="qrCode" style="display: inline-block;"></div>
-        <div style="font-size: 0.65em; color: var(--muted); margin-top: 3px;">امسح للدخول</div>
-    </div>            <label for="usernameInput">اسم المستخدم</label>
+        <div id="passwordStep" style="display: none;">
+            
+            <!-- ✅ QR في صندوق أنيق داخل النموذج -->
+            <div id="qrSection" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; gap: 15px;">
+                <div id="qrCode" style="flex-shrink: 0;"></div>
+                <div style="flex: 1; text-align: right;">
+                    <div style="font-weight: 600; color: #2a5298; font-size: 0.95em; margin-bottom: 4px;">
+                        📱 دخول سريع من الجوال
+                    </div>
+                    <div style="font-size: 0.8em; color: #666; line-height: 1.5;">
+                        امسح الرمز بكاميرا جوالك للدخول إلى النظام مباشرة
+                    </div>
+                </div>
+            </div>
+
+            <label for="usernameInput">اسم المستخدم</label>
             <input type="text" id="usernameInput" placeholder="it12" autocomplete="off">
+            
             <label for="passwordInput">كلمة المرور</label>
             <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="off">
+            
             <button id="loginBtn">🔓 دخول</button>
+            
             <div class="login-error" id="loginError">❌ بيانات الدخول غير صحيحة</div>
+            
             <div class="login-hint">
                 💡 هذا النظام محمي. الدخول للمعلمين والإدارة فقط.
                 <br><a href="#" id="resetSettingsLink">⚙️ إعادة إعداد الاتصال السحابي</a>
             </div>
         </div>
     </div>
-
-
-
-
-    
+</div>
 
 <!-- ===================== التطبيق الرئيسي ===================== -->
 <div id="mainApp" style="display:none;">
