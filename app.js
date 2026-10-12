@@ -788,27 +788,27 @@ function renderAll() {
         }
     }
 
-   function showPassword() {
-    document.getElementById("setupStep").style.display = "none";
-    document.getElementById("passwordStep").style.display = "block";
-    setTimeout(function() { document.getElementById("usernameInput").focus(); }, 200);
-    
-    // توليد QR Code
-    setTimeout(function() {
-        const qrContainer = document.getElementById("qrCode");
-        if (qrContainer && typeof QRCode !== "undefined") {
-            qrContainer.innerHTML = "";
-            new QRCode(qrContainer, {
-                text: window.location.href,
-                width: 140,
-                height: 140,
-                colorDark: "#1e3c72",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        }
-    }, 300);
-}
+    function showPassword() {
+        document.getElementById("setupStep").style.display = "none";
+        document.getElementById("passwordStep").style.display = "block";
+        setTimeout(function() { document.getElementById("usernameInput").focus(); }, 200);
+        
+        // توليد QR Code
+        setTimeout(function() {
+            const qrContainer = document.getElementById("qrCode");
+            if (qrContainer && typeof QRCode !== "undefined") {
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, {
+                    text: window.location.href,
+                    width: 140,
+                    height: 140,
+                    colorDark: "#1e3c72",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+        }, 300);
+    }
 
     async function saveSetup() {
         const mk = document.getElementById("masterKeyInput").value.trim();
@@ -837,15 +837,13 @@ function renderAll() {
         const err = document.getElementById("loginError");
         err.classList.remove("show");
 
-        // التحقق من قاعدة المستخدمين المحملة
         let users = State.users && Object.keys(State.users).length ? State.users : DEFAULT_USERS;
         const user = users[username];
 
         if (user && user.password === password) {
             State.currentUser = Object.assign({ username: username }, user);
-            // تعيين الصف الحالي
             if (user.role === "admin") {
-                State.currentClassId = CLASSES[0].id; // المدير يبدأ بالصف الأول
+                State.currentClassId = CLASSES[0].id;
             } else {
                 State.currentClassId = user.classId;
             }
@@ -865,14 +863,12 @@ function renderAll() {
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("mainApp").style.display = "block";
 
-        // عرض معلومات المستخدم
         const userBadge = document.getElementById("userBadge");
         if (userBadge && State.currentUser) {
             const roleText = State.currentUser.role === "admin" ? "👑" : "👨‍🏫";
             userBadge.textContent = roleText + " " + State.currentUser.name;
         }
 
-        // إخفاء عناصر المدير لغير المدير
         if (State.currentUser && State.currentUser.role !== "admin") {
             document.querySelectorAll(".admin-only").forEach(function(el) {
                 el.classList.add("hidden");
@@ -920,7 +916,6 @@ function renderAll() {
             if (session) {
                 try {
                     const sess = JSON.parse(session);
-                    // تحميل البيانات ثم التحقق من الجلسة
                     loadData().then(function() {
                         const users = State.users || DEFAULT_USERS;
                         const user = users[sess.username];
@@ -936,7 +931,6 @@ function renderAll() {
                     showPassword();
                 }
             } else {
-                // لا توجد جلسة - حمّل البيانات مسبقاً ثم اعرض شاشة الدخول
                 loadData().then(function() {
                     showPassword();
                 });
@@ -957,7 +951,6 @@ async function startApp() {
     try {
         await loadData();
 
-        // إعداد التاريخ
         const ddi = document.getElementById("dailyDate");
         if (ddi) {
             ddi.value = State.dailyDate;
@@ -967,20 +960,17 @@ async function startApp() {
             });
         }
 
-        // إعداد اختيار الصف
         const acs = document.getElementById("adminClassSelect");
         if (acs) {
             acs.addEventListener("change", renderAdminStudents);
         }
 
-        // ربط أزرار التنقل
         document.querySelectorAll(".nav-btn").forEach(function(btn) {
             if (btn.dataset.page) {
                 btn.addEventListener("click", function() { navigate(btn.dataset.page); });
             }
         });
 
-        // إغلاق نافذة الإنذار
         const wm = document.getElementById("warningModal");
         if (wm) wm.addEventListener("click", function(e) { if (e.target === wm) closeWarning(); });
 
@@ -992,40 +982,11 @@ async function startApp() {
     }
 }
 
+window.startApp = startApp;
 
-// إعادة إعداد الاتصال السحابي (للمدير فقط)
-function resetCloudSettings() {
-    if (!State.currentUser || State.currentUser.role !== "admin") {
-        alert("❌ هذه الميزة للمدير فقط");
-        return;
-    }
-    
-    if (!confirm("⚠️ سيتم حذف إعدادات JSONBin.\n\nهل أنت متأكد؟\n\nملاحظة: البيانات في السحابة لن تُحذف، لكن ستحتاج لإعادة إدخال المفاتيح.")) {
-        return;
-    }
-    
-    if (!confirm("⚠️ تأكيد نهائي:\n\nسيتم تسجيل خروجك وإعادة فتح شاشة الإعداد.")) {
-        return;
-    }
-    
-    // امسح الإعدادات والجلسة
-    Cloud.clearSettings();
-    try {
-        localStorage.removeItem(CLOUD_CONFIG.SESSION_KEY);
-    } catch(e) {}
-    
-    location.reload();
-}
-
-
-
-
-
-
-
-/* ==========================================================================
-   ⚙️ إعادة إعداد الاتصال السحابي (للمدير فقط)
-   ========================================================================== */
+// ==========================================================================
+// ⚙️ إعادة إعداد الاتصال السحابي (للمدير فقط)
+// ==========================================================================
 function resetCloudSettings() {
     // التحقق من صلاحية المدير
     if (!State.currentUser || State.currentUser.role !== "admin") {
