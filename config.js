@@ -98,3 +98,11 @@ function numberToArabicWords(num) {
 function getClassById(id) {
     return CLASSES.find(function(c) { return c.id === id; });
 }
+
+/* ==========================================================================
+   🔑 مفاتيح JSONBin المضمنة (تلقائياً لكل الأجهزة)
+   ========================================================================== */
+const EMBEDDED_CLOUD_SETTINGS = {
+    masterKey: "$2a$10$uAozRDoWyFQDRxHFus7lje5LS6VZbpjk7S51",
+    binId:     "6abe1463ac6210605a083f16"
+};
