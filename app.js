@@ -1016,3 +1016,42 @@ function resetCloudSettings() {
     
     location.reload();
 }
+
+
+
+
+
+
+
+/* ==========================================================================
+   ⚙️ إعادة إعداد الاتصال السحابي (للمدير فقط)
+   ========================================================================== */
+function resetCloudSettings() {
+    // التحقق من صلاحية المدير
+    if (!State.currentUser || State.currentUser.role !== "admin") {
+        alert("❌ هذه الميزة للمدير فقط");
+        return;
+    }
+    
+    // التأكيد الأول
+    if (!confirm("⚠️ سيتم حذف إعدادات JSONBin من هذا الجهاز.\n\nملاحظة: بياناتك في السحابة لن تُحذف.\n\nهل أنت متأكد؟")) {
+        return;
+    }
+    
+    // التأكيد النهائي
+    if (!confirm("⚠️ تأكيد نهائي:\n\nسيتم تسجيل خروجك وإعادة فتح شاشة الإعداد.")) {
+        return;
+    }
+    
+    // امسح الإعدادات والجلسة
+    Cloud.clearSettings();
+    try {
+        localStorage.removeItem(CLOUD_CONFIG.SESSION_KEY);
+    } catch(e) {}
+    
+    // أعد تحميل الصفحة
+    location.reload();
+}
+
+// تصدير الدالة عالمياً
+window.resetCloudSettings = resetCloudSettings;
