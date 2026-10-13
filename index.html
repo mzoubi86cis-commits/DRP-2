@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>نظام الحضور والغياب - BTEC</title>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e3c72">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="حضور BTEC">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <!-- مكتبة قراءة ملفات Excel -->
@@ -30,8 +36,15 @@
             <button id="setupBtn">💾 حفظ الإعدادات</button>
             <div class="login-error" id="setupError"></div>
             <div class="login-hint">
-                💡 افتح <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> للحصول على المفاتيح.
-            </div>
+    💡 هذا النظام محمي. الدخول للمعلمين والإدارة فقط.
+    <br>
+    <button id="pwaInstallBtn" onclick="installPWA()" 
+            style="display:none; margin-top: 10px; background: #28a745; color: white; 
+                   border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; 
+                   font-family: inherit; font-size: 0.9em; font-weight: 600;">
+        📲 تثبيت التطبيق على جوالك
+    </button>
+</div>
         </div>
 
         <!-- خطوة كلمة المرور -->
@@ -327,6 +340,53 @@
     <div class="warning-paper" id="warningPaper"></div>
 </div>
 
+    <script>
+// تسجيل Service Worker
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("service-worker.js")
+            .then(function(reg) {
+                console.log("✅ Service Worker registered:", reg.scope);
+            })
+            .catch(function(err) {
+                console.error("❌ Service Worker registration failed:", err);
+            });
+    });
+}
+
+// زر التثبيت التلقائي
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // إظهار زر التثبيت إذا كان موجوداً
+    const installBtn = document.getElementById("pwaInstallBtn");
+    if (installBtn) installBtn.style.display = "inline-block";
+});
+
+// دالة تثبيت التطبيق
+function installPWA() {
+    if (!deferredPrompt) {
+        alert("التطبيق مثبت مسبقاً أو غير مدعوم في هذا المتصفح");
+        return;
+    }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choiceResult) {
+        if (choiceResult.outcome === "accepted") {
+            console.log("✅ User accepted install");
+        }
+        deferredPrompt = null;
+    });
+}
+
+// إخفاء الزر بعد التثبيت
+window.addEventListener("appinstalled", function() {
+    console.log("✅ PWA installed");
+    const installBtn = document.getElementById("pwaInstallBtn");
+    if (installBtn) installBtn.style.display = "none";
+});
+</script>
 <!-- ===================== السكربتات ===================== -->
 <script src="config.js"></script>
 <script src="cloud.js"></script>
