@@ -401,10 +401,32 @@ function changeDay(delta) {
 }
 
 async function saveDailyRecord() {
-    if (!State.currentClassId) { alert("اختر صفاً أولاً"); return; }
-    if (Object.keys(State.dailySelections).length === 0) {
-        alert("⚠️ لم تحدد أي حالة لأي طالب"); return;
+    if (!State.currentClassId) { 
+        alert("اختر صفاً أولاً"); 
+        return; 
     }
+
+    // فلترة القيم الصحيحة فقط
+    const validSelections = {};
+    Object.entries(State.dailySelections).forEach(function(entry) {
+        const sid = entry[0];
+        const value = entry[1];
+        
+        if (typeof value === "string" && value) {
+            validSelections[sid] = value;
+        } else if (value && typeof value === "object" && value.status) {
+            validSelections[sid] = value;
+        }
+    });
+
+    if (Object.keys(validSelections).length === 0) {
+        alert("⚠️ لم تحدد أي حالة لأي طالب");
+        return;
+    }
+
+    // استخدام القيم المفلترة
+    State.dailySelections = validSelections;
+
     Attendance.saveDay(State, State.currentClassId, State.dailyDate, State.dailySelections);
     updateSyncStatus("syncing", "⏳ جارٍ الحفظ...");
     const ok = await syncToCloud();
