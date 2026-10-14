@@ -1,108 +1,93 @@
 /* ==========================================================================
-   config.js - البيانات الثابتة والإعدادات
+   reports.js - التقارير والإنذارات
    ========================================================================== */
 
-// ===== بيانات المدرسة =====
-const SCHOOL_INFO = {
-    name: "مدرسة الطرة الثانوية للبنين",
-    ministry: "وزارة التربية والتعليم",
-    directorate: "مديرية التربية والتعليم للواء الرمثا",
-    year: "2026 / 2027",
-    principal: "د. طارق جيت"
-};
+const Reports = {
 
-// ===== الصفوف والتخصصات =====
-const CLASSES = [
-    { id: "IT10", name: "تكنولوجيا المعلومات - عاشر",            short: "IT - عاشر",   teacher: "أ. منذر الزعبي",  quality: "أ. يزن الخطيب" },
-    { id: "IT11", name: "تكنولوجيا المعلومات - أول ثانوي",       short: "IT - أول ثانوي", teacher: "أ. منذر الزعبي",  quality: "أ. يزن الخطيب" },
-    { id: "IT12", name: "تكنولوجيا المعلومات - ثاني ثانوي",      short: "IT - ثاني ثانوي", teacher: "أ. منذر الزعبي",  quality: "أ. يزن الخطيب" },
-    { id: "BM10", name: "إدارة الأعمال - عاشر",                  short: "BM - عاشر",   teacher: "أ. يزن الخطيب",   quality: "أ. منذر الزعبي" },
-    { id: "BM11", name: "إدارة الأعمال - أول ثانوي",             short: "BM - أول ثانوي", teacher: "أ. يزن الخطيب",   quality: "أ. منذر الزعبي" },
-    { id: "BM12", name: "إدارة الأعمال - ثاني ثانوي",            short: "BM - ثاني ثانوي", teacher: "أ. يزن الخطيب",   quality: "أ. منذر الزعبي" }
-];
+    // توليد تقرير لصف معين
+    generate: function(state, classId, startDate, endDate, mode) {
+        const students = Students.getByClass(state, classId);
 
-// ===== المستخدمون الافتراضيون =====
-// المفتاح = username، القيمة = بيانات المستخدم
-const DEFAULT_USERS = {
-    "admin": { password: "admin-2026", name: "د. طارق جيت", role: "admin", classId: null },
-    "it10":  { password: "it10-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT10" },
-    "it11":  { password: "it11-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT11" },
-    "it12":  { password: "it12-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT12" },
-    "bm10":  { password: "bm10-2026",  name: "أ. يزن الخطيب",  role: "teacher", classId: "BM10" },
-    "bm11":  { password: "bm11-2026",  name: "أ. يزن الخطيب",  role: "teacher", classId: "BM11" },
-    "bm12":  { password: "bm12-2026",  name: "أ. يزن الخطيب",  role: "teacher", classId: "BM12" }
-};
+        return students.map(function(s) {
+            const recs = state.records.filter(function(r) {
+                return r.student_id === s.id && r.date >= startDate && r.date <= endDate;
+            });
 
-// ===== حدود التنبيهات =====
-const WARNING_THRESHOLD = 5;   // تنبيه أصفر
-const ORANGE_THRESHOLD = 25;   // إنذار برتقالي
-const RED_THRESHOLD = 35;      // إنذار أحمر
+            const aD = recs.filter(function(r) { return r.status === STATUS.ABSENT; });
+            const eD = recs.filter(function(r) { return r.status === STATUS.EXCUSED; });
+            const escD = recs.filter(function(r) { return r.status === STATUS.ESCAPE; });
+            const lateD = recs.filter(function(r) { return r.status === STATUS.LATE; });
 
-// ===== إعدادات JSONBin =====
-const CLOUD_CONFIG = {
-    API_URL: "https://api.jsonbin.io/v3/b",
-    STORAGE_KEY: "btec_settings",
-    SESSION_KEY: "btec_session"
-};
+            let displayDates = [];
+            let sortKey = 0;
 
-// ===== نوع السجلات =====
-const STATUS = {
-    PRESENT: "present",
-    ABSENT: "absent",
-    EXCUSED: "excused"
-};
+            if (mode === "all") {
+                displayDates = recs.map(function(r) {
+                    let label = "";
+                    if (r.status === STATUS.EXCUSED) label = " (عذر)";
+                    else if (r.status === STATUS.ESCAPE) label = " (هروب ح" + (r.period || "?") + ")";
+                    else if (r.status === STATUS.LATE) label = " (تأخير " + (r.minutes || "?") + "د ح" + (r.period || "?") + ")";
+                    return r.date + label;
+                }).sort();
+                sortKey = recs.length;
+            } else if (mode === "absent") {
+                displayDates = aD.map(function(r) { return r.date; }).sort();
+                sortKey = aD.length;
+            } else if (mode === "excused") {
+                displayDates = eD.map(function(r) { return r.date; }).sort();
+                sortKey = eD.length;
+            } else if (mode === "escape") {
+                displayDates = escD.map(function(r) {
+                    return r.date + " (ح" + (r.period || "?") + ")";
+                }).sort();
+                sortKey = escD.length;
+            } else if (mode === "late") {
+                displayDates = lateD.map(function(r) {
+                    return r.date + " (" + (r.minutes || "?") + "د ح" + (r.period || "?") + ")";
+                }).sort();
+                sortKey = lateD.length;
+            }
 
-// ===== أدوات مساعدة عامة =====
-function getStatusColor(total) {
-    if (total >= RED_THRESHOLD) return "red";
-    if (total >= ORANGE_THRESHOLD) return "orange";
-    if (total >= WARNING_THRESHOLD) return "yellow";
-    return "green";
-}
+            // حساب المجموع للتنبيهات
+            let alertTotal = aD.length;
+            if (COUNT_IN_ALERTS.ESCAPE) alertTotal += escD.length;
+            if (COUNT_IN_ALERTS.LATE)   alertTotal += lateD.length;
 
-function getStatusText(total) {
-    if (total >= RED_THRESHOLD) return "🔴 إنذار أحمر";
-    if (total >= ORANGE_THRESHOLD) return "🟠 إنذار برتقالي";
-    if (total >= WARNING_THRESHOLD) return "🟡 تنبيه";
-    return "🟢 منتظم";
-}
+            return {
+                id: s.id,
+                classId: s.classId,
+                nameAr: s.nameAr,
+                number: s.number,
+                absent: aD.length,
+                excused: eD.length,
+                escape: escD.length,
+                late: lateD.length,
+                total: recs.length,
+                alertTotal: alertTotal,
+                displayDates: displayDates,
+                sortKey: sortKey,
+                color: getStatusColor(alertTotal),
+                status: getStatusText(alertTotal)
+            };
+        }).sort(function(a, b) { return b.sortKey - a.sortKey; });
+    },
 
-function getWarningLevel(days) {
-    if (days >= RED_THRESHOLD) return 3;
-    if (days >= ORANGE_THRESHOLD) return 2;
-    if (days >= WARNING_THRESHOLD) return 1;
-    return 0;
-}
+    // تصدير CSV
+    exportCSV: function(rows, className, startDate, endDate) {
+        let csv = "\uFEFF";
+        csv += "الرقم,اسم الطالب,رقم الطالب,غائب,بعذر,هروب,تأخير,الإجمالي,الحالة,تواريخ الغياب\n";
 
-function todayISO() {
-    return new Date().toISOString().split("T")[0];
-}
+        rows.forEach(function(r) {
+            const dStr = r.displayDates.join(" | ");
+            csv += '"' + r.id + '","' + r.nameAr + '","' + r.number + '",' +
+                   r.absent + ',' + r.excused + ',' + r.escape + ',' + r.late + ',' +
+                   r.total + ',' + '"' + r.status + '","' + dStr + '"\n';
+        });
 
-function formatDateAr(iso) {
-    if (!iso) return "";
-    const days = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-    const d = new Date(iso + "T00:00:00");
-    return iso + " (" + days[d.getDay()] + ")";
-}
-
-function numberToArabicWords(num) {
-    const ones = ["", "يوم واحد", "يومان", "ثلاثة أيام", "أربعة أيام", "خمسة أيام", "ستة أيام", "سبعة أيام", "ثمانية أيام", "تسعة أيام"];
-    const tens = ["", "عشرة أيام", "عشرون يومًا", "ثلاثون يومًا", "أربعون يومًا", "خمسون يومًا", "ستون يومًا", "سبعون يومًا", "ثمانون يومًا", "تسعون يومًا"];
-    if (num < 10) return ones[num];
-    if (num === 10) return "عشرة أيام";
-    if (num < 20) return ones[num - 10] + " عشر";
-    if (num % 10 === 0) return tens[num / 10];
-    return ones[num % 10] + " و" + tens[Math.floor(num / 10)];
-}
-
-function getClassById(id) {
-    return CLASSES.find(function(c) { return c.id === id; });
-}
-
-/* ==========================================================================
-   🔑 مفاتيح JSONBin المضمنة (تلقائياً لكل الأجهزة)
-   ========================================================================== */
-const EMBEDDED_CLOUD_SETTINGS = {
-    masterKey: "$2a$10$uAozRDoWyFQDRxHFus7Ije5LS6VZbpjk7S51sHOny3mo3YLH1PUjy",
-    binId:     "6ac60485ffd5d16053554f0e"
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "تقرير_" + className + "_" + startDate + "_" + endDate + ".csv";
+        a.click();
+    }
 };
