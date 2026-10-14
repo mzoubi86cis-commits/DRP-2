@@ -161,21 +161,26 @@ function renderStats() {
     const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
     let tA = 0, tE = 0;
 
-    students.forEach(function(s) {
-        const c = Attendance.countAbsent(State, s.id);
-        counts[getStatusColor(c)]++;
-        tA += Attendance.countAbsent(State, s.id);
-        tE += Attendance.countExcused(State, s.id);
-    });
+    let tEsc = 0, tLate = 0;
+students.forEach(function(s) {
+    const c = Attendance.countForAlerts(State, s.id);
+    counts[getStatusColor(c)]++;
+    tA += Attendance.countAbsent(State, s.id);
+    tE += Attendance.countExcused(State, s.id);
+    tEsc += Attendance.countEscape(State, s.id);
+    tLate += Attendance.countLate(State, s.id);
+});
 
-    document.getElementById("statsCards").innerHTML =
-        '<div class="card total"><h3>👥 إجمالي الطلاب</h3><span class="num">' + students.length + '</span></div>' +
-        '<div class="card red"><h3>❌ إجمالي الغياب</h3><span class="num">' + tA + '</span></div>' +
-        '<div class="card excused"><h3>📝 إجمالي بعذر</h3><span class="num">' + tE + '</span></div>' +
-        '<div class="card green"><h3>🟢 منتظم</h3><span class="num">' + counts.green + '</span></div>' +
-        '<div class="card yellow"><h3>🟡 تنبيه</h3><span class="num">' + counts.yellow + '</span></div>' +
-        '<div class="card orange"><h3>🟠 إنذار برتقالي</h3><span class="num">' + counts.orange + '</span></div>' +
-        '<div class="card red"><h3>🔴 إنذار أحمر</h3><span class="num">' + counts.red + '</span></div>';
+ document.getElementById("statsCards").innerHTML =
+    '<div class="card total"><h3>👥 إجمالي الطلاب</h3><span class="num">' + students.length + '</span></div>' +
+    '<div class="card red"><h3>❌ غياب كامل</h3><span class="num">' + tA + '</span></div>' +
+    '<div class="card excused"><h3>📝 بعذر</h3><span class="num">' + tE + '</span></div>' +
+    '<div class="card" style="background:linear-gradient(135deg,#fd7e14,#dc6502);"><h3>🏃 هروب</h3><span class="num">' + tEsc + '</span></div>' +
+    '<div class="card" style="background:linear-gradient(135deg,#d39e00,#a67c00);"><h3>⏰ تأخير</h3><span class="num">' + tLate + '</span></div>' +
+    '<div class="card green"><h3>🟢 منتظم</h3><span class="num">' + counts.green + '</span></div>' +
+    '<div class="card yellow"><h3>🟡 تنبيه</h3><span class="num">' + counts.yellow + '</span></div>' +
+    '<div class="card orange"><h3>🟠 برتقالي</h3><span class="num">' + counts.orange + '</span></div>' +
+    '<div class="card red"><h3>🔴 أحمر</h3><span class="num">' + counts.red + '</span></div>';
 }
 
 // ===== جدول الطلاب =====
@@ -208,8 +213,10 @@ function renderStudentsTable() {
             '<td>' + s.id + '</td>' +
             '<td><a class="student-link" onclick="openStudent(' + s.id + ')">' + s.nameAr + '</a></td>' +
             '<td>' + s.number + '</td>' +
-            '<td><span class="badge badge-' + color + '">' + absent + '</span></td>' +
-            '<td><span class="badge badge-excused">' + excused + '</span></td>' +
+           '<td><span class="badge badge-' + color + '">' + absent + '</span></td>' +
+'<td><span class="badge badge-excused">' + excused + '</span></td>' +
+'<td><span class="badge badge-escape">' + Attendance.countEscape(State, s.id) + '</span></td>' +
+'<td><span class="badge badge-late">' + Attendance.countLate(State, s.id) + '</span></td>' +
             '<td>' + status + '</td>' +
             '<td><button class="btn btn-small btn-info" onclick="openStudent(' + s.id + ')">📋 تفاصيل</button>' +
                 (level > 0 ? ' <button class="btn btn-small btn-warning" onclick="showWarning(' + s.id + ')">📨 إنذار</button>' : '') +
@@ -237,12 +244,40 @@ function renderDailyTable() {
     State.records.filter(function(r) {
         return r.date === State.dailyDate && classStudentIds.indexOf(r.student_id) !== -1;
     }).forEach(function(r) {
-        existing[r.student_id] = r.status;
-        State.dailySelections[r.student_id] = r.status;
+        // نحفظ ككائن كامل للهروب والتأخير
+        if (r.status === STATUS.ESCAPE || r.status === STATUS.LATE) {
+            existing[r.student_id] = {
+                status: r.status,
+                period: r.period,
+                minutes: r.minutes
+            };
+        } else {
+            existing[r.student_id] = r.status;
+        }
+        State.dailySelections[r.student_id] = existing[r.student_id];
     });
 
     students.sort(function(a, b) { return a.id - b.id; }).forEach(function(s) {
-        const status = existing[s.id] || null;
+        const value = existing[s.id];
+        let status = null, period = null, minutes = null;
+
+        if (typeof value === "object" && value !== null) {
+            status = value.status;
+            period = value.period;
+            minutes = value.minutes;
+        } else {
+            status = value;
+        }
+
+        // تسمية الأزرار بناءً على الحالة
+        let escapeLabel = "🏃 هروب";
+        if (status === "escape" && period) escapeLabel = "🏃 هروب (ح" + period + ")";
+        
+        let lateLabel = "⏰ تأخير";
+        if (status === "late" && period) {
+            lateLabel = "⏰ تأخير (" + (minutes ? minutes + "د " : "") + "ح" + period + ")";
+        }
+
         const tr = document.createElement("tr");
         tr.innerHTML =
             '<td>' + s.id + '</td>' +
@@ -252,42 +287,89 @@ function renderDailyTable() {
                 '<button class="status-btn ' + (status === "present" ? "active-present" : "") + '" onclick="setStatus(' + s.id + ', \'present\')">✅ حاضر</button>' +
                 '<button class="status-btn ' + (status === "absent" ? "active-absent" : "") + '" onclick="setStatus(' + s.id + ', \'absent\')">❌ غائب</button>' +
                 '<button class="status-btn ' + (status === "excused" ? "active-excused" : "") + '" onclick="setStatus(' + s.id + ', \'excused\')">📝 بعذر</button>' +
+                '<button class="status-btn ' + (status === "escape" ? "active-escape" : "") + '" onclick="openPeriodModal(' + s.id + ', \'escape\')">' + escapeLabel + '</button>' +
+                '<button class="status-btn ' + (status === "late" ? "active-late" : "") + '" onclick="openPeriodModal(' + s.id + ', \'late\')">' + lateLabel + '</button>' +
             '</div></td>';
         tbody.appendChild(tr);
     });
     updateDailyCounters();
 }
 
+
+
+
 function setStatus(sid, status) {
-    if (State.dailySelections[sid] === status) delete State.dailySelections[sid];
-    else State.dailySelections[sid] = status;
+    // عند اختيار حاضر/غائب/بعذر - إزالة أي تفاصيل سابقة
+    if (State.dailySelections[sid] && typeof State.dailySelections[sid] === "object") {
+        if (State.dailySelections[sid].status === status) {
+            delete State.dailySelections[sid];
+        } else {
+            State.dailySelections[sid] = status;
+        }
+    } else {
+        if (State.dailySelections[sid] === status) {
+            delete State.dailySelections[sid];
+        } else {
+            State.dailySelections[sid] = status;
+        }
+    }
     refreshRowButtons(sid);
     updateDailyCounters();
 }
 
+
+
 function refreshRowButtons(sid) {
     const group = document.querySelector('.status-group[data-sid="' + sid + '"]');
     if (!group) return;
-    const status = State.dailySelections[sid];
+    const value = State.dailySelections[sid];
+    let status = null, period = null, minutes = null;
+
+    if (value && typeof value === "object") {
+        status = value.status;
+        period = value.period;
+        minutes = value.minutes;
+    } else {
+        status = value;
+    }
+
     const buttons = group.querySelectorAll(".status-btn");
     buttons.forEach(function(b) { b.className = "status-btn"; });
+
     if (status === "present") buttons[0].classList.add("active-present");
-    if (status === "absent") buttons[1].classList.add("active-absent");
+    if (status === "absent")  buttons[1].classList.add("active-absent");
     if (status === "excused") buttons[2].classList.add("active-excused");
+    if (status === "escape") {
+        buttons[3].classList.add("active-escape");
+        buttons[3].textContent = period ? "🏃 هروب (ح" + period + ")" : "🏃 هروب";
+    }
+    if (status === "late") {
+        buttons[4].classList.add("active-late");
+        buttons[4].textContent = period ? "⏰ تأخير (" + (minutes ? minutes + "د " : "") + "ح" + period + ")" : "⏰ تأخير";
+    }
 }
 
 function updateDailyCounters() {
-    let p = 0, a = 0, e = 0;
-    Object.values(State.dailySelections).forEach(function(s) {
+    let p = 0, a = 0, e = 0, esc = 0, late = 0;
+    Object.values(State.dailySelections).forEach(function(v) {
+        const s = (v && typeof v === "object") ? v.status : v;
         if (s === "present") p++;
         else if (s === "absent") a++;
         else if (s === "excused") e++;
+        else if (s === "escape") esc++;
+        else if (s === "late") late++;
     });
+
     const students = Students.getByClass(State, State.currentClassId);
+    
     document.getElementById("cPresent").textContent = p;
     document.getElementById("cAbsent").textContent = a;
     document.getElementById("cExcused").textContent = e;
-    document.getElementById("cUnset").textContent = students.length - (p + a + e);
+    const cEscape = document.getElementById("cEscape");
+    const cLate = document.getElementById("cLate");
+    if (cEscape) cEscape.textContent = esc;
+    if (cLate) cLate.textContent = late;
+    document.getElementById("cUnset").textContent = students.length - (p + a + e + esc + late);
 }
 
 function markAll(status) {
@@ -1016,3 +1098,109 @@ function resetCloudSettings() {
 
 // تصدير الدالة عالمياً
 window.resetCloudSettings = resetCloudSettings;
+
+
+
+/* ==========================================================================
+   ⏰ نافذة اختيار الحصة (هروب/تأخير)
+   ========================================================================== */
+
+let periodModalState = {
+    studentId: null,
+    mode: null,        // 'escape' | 'late'
+    period: null,
+    minutes: null
+};
+
+function openPeriodModal(sid, mode) {
+    const s = State.students.find(function(x) { return x.id === sid; });
+    if (!s) return;
+
+    periodModalState = {
+        studentId: sid,
+        mode: mode,
+        period: null,
+        minutes: null
+    };
+
+    // إعداد النافذة
+    const modal = document.getElementById("periodModal");
+    const title = document.getElementById("periodModalTitle");
+    const studentInfo = document.getElementById("periodModalStudent");
+    const minutesSection = document.getElementById("minutesSection");
+
+    if (mode === "escape") {
+        title.textContent = "🏃 تسجيل هروب";
+        minutesSection.style.display = "none";
+        modal.classList.add("escape-mode");
+        modal.classList.remove("late-mode");
+    } else {
+        title.textContent = "⏰ تسجيل تأخير";
+        minutesSection.style.display = "block";
+        modal.classList.add("late-mode");
+        modal.classList.remove("escape-mode");
+    }
+
+    studentInfo.textContent = "الطالب: " + s.nameAr;
+    
+    // مسح التحديدات
+    document.querySelectorAll(".period-btn").forEach(function(b) { b.classList.remove("selected"); });
+    document.querySelectorAll(".minutes-btn").forEach(function(b) { b.classList.remove("selected"); });
+    document.getElementById("periodNote").value = "";
+
+    modal.classList.add("show");
+}
+
+function selectPeriod(p) {
+    periodModalState.period = p;
+    document.querySelectorAll(".period-btn").forEach(function(b) {
+        b.classList.toggle("selected", parseInt(b.textContent) === p);
+    });
+}
+
+function selectMinutes(m) {
+    periodModalState.minutes = m;
+    const labels = document.querySelectorAll(".minutes-btn");
+    labels.forEach(function(b) {
+        const val = b.textContent.replace("+", "");
+        b.classList.toggle("selected", parseInt(val) === m);
+    });
+}
+
+function confirmPeriodSelection() {
+    if (!periodModalState.period) {
+        alert("⚠️ يجب تحديد رقم الحصة");
+        return;
+    }
+    if (periodModalState.mode === "late" && !periodModalState.minutes) {
+        alert("⚠️ يجب تحديد عدد دقائق التأخير");
+        return;
+    }
+
+    const sid = periodModalState.studentId;
+    State.dailySelections[sid] = {
+        status: periodModalState.mode,
+        period: periodModalState.period,
+        minutes: periodModalState.mode === "late" ? periodModalState.minutes : null
+    };
+
+    closePeriodModal();
+    renderDailyTable();  // إعادة رسم الجدول لعرض التحديث
+    updateDailyCounters();
+}
+
+function cancelPeriodSelection() {
+    closePeriodModal();
+}
+
+function closePeriodModal() {
+    document.getElementById("periodModal").classList.remove("show", "escape-mode", "late-mode");
+    periodModalState = { studentId: null, mode: null, period: null, minutes: null };
+}
+
+// تصدير الدوال عالمياً
+window.openPeriodModal = openPeriodModal;
+window.selectPeriod = selectPeriod;
+window.selectMinutes = selectMinutes;
+window.confirmPeriodSelection = confirmPeriodSelection;
+window.cancelPeriodSelection = cancelPeriodSelection;
