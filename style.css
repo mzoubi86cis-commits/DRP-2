@@ -738,3 +738,148 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     .login-box { padding: 30px 22px; }
     .admin-grid { grid-template-columns: 1fr; }
 }
+
+
+/* ==========================================================================
+   نافذة اختيار الحصة (هروب/تأخير)
+   ========================================================================== */
+
+.period-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+}
+.period-modal.show { display: flex; }
+
+.period-modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 14px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    animation: popIn 0.2s ease;
+}
+@keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.period-modal-content h3 {
+    color: var(--primary-light);
+    margin-bottom: 8px;
+    font-size: 1.15em;
+}
+
+.modal-section {
+    margin: 15px 0;
+}
+.modal-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 0.95em;
+}
+
+/* أزرار الحصص */
+.period-buttons,
+.minutes-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.period-btn,
+.minutes-btn {
+    min-width: 50px;
+    height: 50px;
+    border: 2px solid var(--border);
+    background: #f8f9fa;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #555;
+    transition: all 0.15s;
+}
+.period-btn:hover,
+.minutes-btn:hover {
+    border-color: var(--primary-light);
+    background: #e9ecef;
+}
+
+.period-btn.selected,
+.minutes-btn.selected {
+    background: var(--primary-light);
+    color: white;
+    border-color: var(--primary-light);
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(42,82,152,0.3);
+}
+
+/* للهروب - لون برتقالي عند التحديد */
+.period-modal.escape-mode .period-btn.selected {
+    background: var(--orange);
+    border-color: var(--orange);
+    box-shadow: 0 3px 10px rgba(253,126,20,0.3);
+}
+
+/* للتأخير - لون أصفر عند التحديد */
+.period-modal.late-mode .period-btn.selected,
+.period-modal.late-mode .minutes-btn.selected {
+    background: #d39e00;
+    border-color: #d39e00;
+    color: white;
+    box-shadow: 0 3px 10px rgba(211,158,0,0.3);
+}
+
+/* الأزرار الكبيرة للجوال */
+@media (max-width: 600px) {
+    .period-btn,
+    .minutes-btn {
+        min-width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+}
+
+/* ===== أزرار الحالة الجديدة في التسجيل اليومي ===== */
+.status-btn.active-escape {
+    background: var(--orange);
+    color: white;
+    font-weight: 700;
+}
+.status-btn.active-late {
+    background: #d39e00;
+    color: white;
+    font-weight: 700;
+}
+
+/* ===== مجموعة أزرار موسّعة ===== */
+.status-group {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .status-group {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+    }
+    .status-btn {
+        width: 100%;
+        font-size: 0.78em;
+        padding: 8px 4px;
+    }
+}
+
+/* ===== بادجات جديدة ===== */
+.badge-escape { background: #ffe5b4; color: #b35900; }
+.badge-late   { background: #fff3cd; color: #856404; }
