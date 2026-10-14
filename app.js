@@ -125,7 +125,7 @@ function navigate(page) {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ===== عرض محدد الصف =====
+// ===== محدد الصف =====
 function renderClassSelector() {
     const container = document.getElementById("classSelector");
     if (!container) return;
@@ -159,28 +159,27 @@ function renderStats() {
 
     const students = Students.getByClass(State, State.currentClassId);
     const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
-    let tA = 0, tE = 0;
+    let tA = 0, tE = 0, tEsc = 0, tLate = 0;
 
-    let tEsc = 0, tLate = 0;
-students.forEach(function(s) {
-    const c = Attendance.countForAlerts(State, s.id);
-    counts[getStatusColor(c)]++;
-    tA += Attendance.countAbsent(State, s.id);
-    tE += Attendance.countExcused(State, s.id);
-    tEsc += Attendance.countEscape(State, s.id);
-    tLate += Attendance.countLate(State, s.id);
-});
+    students.forEach(function(s) {
+        const c = Attendance.countForAlerts(State, s.id);
+        counts[getStatusColor(c)]++;
+        tA += Attendance.countAbsent(State, s.id);
+        tE += Attendance.countExcused(State, s.id);
+        tEsc += Attendance.countEscape(State, s.id);
+        tLate += Attendance.countLate(State, s.id);
+    });
 
- document.getElementById("statsCards").innerHTML =
-    '<div class="card total"><h3>👥 إجمالي الطلاب</h3><span class="num">' + students.length + '</span></div>' +
-    '<div class="card red"><h3>❌ غياب كامل</h3><span class="num">' + tA + '</span></div>' +
-    '<div class="card excused"><h3>📝 بعذر</h3><span class="num">' + tE + '</span></div>' +
-    '<div class="card" style="background:linear-gradient(135deg,#fd7e14,#dc6502);"><h3>🏃 هروب</h3><span class="num">' + tEsc + '</span></div>' +
-    '<div class="card" style="background:linear-gradient(135deg,#d39e00,#a67c00);"><h3>⏰ تأخير</h3><span class="num">' + tLate + '</span></div>' +
-    '<div class="card green"><h3>🟢 منتظم</h3><span class="num">' + counts.green + '</span></div>' +
-    '<div class="card yellow"><h3>🟡 تنبيه</h3><span class="num">' + counts.yellow + '</span></div>' +
-    '<div class="card orange"><h3>🟠 برتقالي</h3><span class="num">' + counts.orange + '</span></div>' +
-    '<div class="card red"><h3>🔴 أحمر</h3><span class="num">' + counts.red + '</span></div>';
+    document.getElementById("statsCards").innerHTML =
+        '<div class="card total"><h3>👥 إجمالي الطلاب</h3><span class="num">' + students.length + '</span></div>' +
+        '<div class="card red"><h3>❌ غياب كامل</h3><span class="num">' + tA + '</span></div>' +
+        '<div class="card excused"><h3>📝 بعذر</h3><span class="num">' + tE + '</span></div>' +
+        '<div class="card escape"><h3>🏃 هروب</h3><span class="num">' + tEsc + '</span></div>' +
+        '<div class="card late"><h3>⏰ تأخير</h3><span class="num">' + tLate + '</span></div>' +
+        '<div class="card green"><h3>🟢 منتظم</h3><span class="num">' + counts.green + '</span></div>' +
+        '<div class="card yellow"><h3>🟡 تنبيه</h3><span class="num">' + counts.yellow + '</span></div>' +
+        '<div class="card orange"><h3>🟠 برتقالي</h3><span class="num">' + counts.orange + '</span></div>' +
+        '<div class="card red"><h3>🔴 أحمر</h3><span class="num">' + counts.red + '</span></div>';
 }
 
 // ===== جدول الطلاب =====
@@ -190,22 +189,25 @@ function renderStudentsTable() {
     tbody.innerHTML = "";
 
     if (!State.currentClassId) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">اختر صفاً من الأعلى</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">اختر صفاً من الأعلى</td></tr>';
         return;
     }
 
     const students = Students.getByClass(State, State.currentClassId);
     if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">لا يوجد طلاب في هذا الصف. أضف طلاباً من "إدارة الطلاب".</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">لا يوجد طلاب في هذا الصف.</td></tr>';
         return;
     }
 
     students.sort(function(a, b) { return a.id - b.id; }).forEach(function(s) {
         const absent = Attendance.countAbsent(State, s.id);
         const excused = Attendance.countExcused(State, s.id);
-        const color = getStatusColor(absent);
-        const status = getStatusText(absent);
-        const level = getWarningLevel(absent);
+        const escape = Attendance.countEscape(State, s.id);
+        const late = Attendance.countLate(State, s.id);
+        const alertTotal = Attendance.countForAlerts(State, s.id);
+        const color = getStatusColor(alertTotal);
+        const status = getStatusText(alertTotal);
+        const level = getWarningLevel(alertTotal);
 
         const tr = document.createElement("tr");
         tr.className = "row-" + color;
@@ -213,12 +215,13 @@ function renderStudentsTable() {
             '<td>' + s.id + '</td>' +
             '<td><a class="student-link" onclick="openStudent(' + s.id + ')">' + s.nameAr + '</a></td>' +
             '<td>' + s.number + '</td>' +
-           '<td><span class="badge badge-' + color + '">' + absent + '</span></td>' +
-'<td><span class="badge badge-excused">' + excused + '</span></td>' +
-'<td><span class="badge badge-escape">' + Attendance.countEscape(State, s.id) + '</span></td>' +
-'<td><span class="badge badge-late">' + Attendance.countLate(State, s.id) + '</span></td>' +
+            '<td><span class="badge badge-red">' + absent + '</span></td>' +
+            '<td><span class="badge badge-excused">' + excused + '</span></td>' +
+            '<td><span class="badge badge-escape">' + escape + '</span></td>' +
+            '<td><span class="badge badge-late">' + late + '</span></td>' +
             '<td>' + status + '</td>' +
-            '<td><button class="btn btn-small btn-info" onclick="openStudent(' + s.id + ')">📋 تفاصيل</button>' +
+            '<td style="white-space:nowrap;">' +
+                '<button class="btn btn-small btn-info" onclick="openStudent(' + s.id + ')">📋 تفاصيل</button>' +
                 (level > 0 ? ' <button class="btn btn-small btn-warning" onclick="showWarning(' + s.id + ')">📨 إنذار</button>' : '') +
             '</td>';
         tbody.appendChild(tr);
@@ -244,7 +247,6 @@ function renderDailyTable() {
     State.records.filter(function(r) {
         return r.date === State.dailyDate && classStudentIds.indexOf(r.student_id) !== -1;
     }).forEach(function(r) {
-        // نحفظ ككائن كامل للهروب والتأخير
         if (r.status === STATUS.ESCAPE || r.status === STATUS.LATE) {
             existing[r.student_id] = {
                 status: r.status,
@@ -261,7 +263,7 @@ function renderDailyTable() {
         const value = existing[s.id];
         let status = null, period = null, minutes = null;
 
-        if (typeof value === "object" && value !== null) {
+        if (value && typeof value === "object") {
             status = value.status;
             period = value.period;
             minutes = value.minutes;
@@ -269,7 +271,6 @@ function renderDailyTable() {
             status = value;
         }
 
-        // تسمية الأزرار بناءً على الحالة
         let escapeLabel = "🏃 هروب";
         if (status === "escape" && period) escapeLabel = "🏃 هروب (ح" + period + ")";
         
@@ -295,13 +296,8 @@ function renderDailyTable() {
     updateDailyCounters();
 }
 
-
-
-
 function setStatus(sid, status) {
     const current = State.dailySelections[sid];
-    
-    // استخراج الحالة الحالية (قد تكون كائن)
     const currentStatus = (current && typeof current === "object") ? current.status : current;
     
     if (currentStatus === status) {
@@ -313,8 +309,6 @@ function setStatus(sid, status) {
     refreshRowButtons(sid);
     updateDailyCounters();
 }
-
-
 
 function refreshRowButtons(sid) {
     const group = document.querySelector('.status-group[data-sid="' + sid + '"]');
@@ -359,14 +353,19 @@ function updateDailyCounters() {
 
     const students = Students.getByClass(State, State.currentClassId);
     
-    document.getElementById("cPresent").textContent = p;
-    document.getElementById("cAbsent").textContent = a;
-    document.getElementById("cExcused").textContent = e;
-    const cEscape = document.getElementById("cEscape");
-    const cLate = document.getElementById("cLate");
-    if (cEscape) cEscape.textContent = esc;
-    if (cLate) cLate.textContent = late;
-    document.getElementById("cUnset").textContent = students.length - (p + a + e + esc + late);
+    const elP = document.getElementById("cPresent");
+    const elA = document.getElementById("cAbsent");
+    const elE = document.getElementById("cExcused");
+    const elEsc = document.getElementById("cEscape");
+    const elLate = document.getElementById("cLate");
+    const elU = document.getElementById("cUnset");
+    
+    if (elP) elP.textContent = p;
+    if (elA) elA.textContent = a;
+    if (elE) elE.textContent = e;
+    if (elEsc) elEsc.textContent = esc;
+    if (elLate) elLate.textContent = late;
+    if (elU) elU.textContent = students.length - (p + a + e + esc + late);
 }
 
 function markAll(status) {
@@ -403,7 +402,6 @@ async function saveDailyRecord() {
         return; 
     }
 
-    // فلترة القيم الصحيحة فقط
     const validSelections = {};
     Object.entries(State.dailySelections).forEach(function(entry) {
         const sid = entry[0];
@@ -421,7 +419,6 @@ async function saveDailyRecord() {
         return;
     }
 
-    // استخدام القيم المفلترة
     State.dailySelections = validSelections;
 
     Attendance.saveDay(State, State.currentClassId, State.dailyDate, State.dailySelections);
@@ -433,23 +430,116 @@ async function saveDailyRecord() {
     }
 }
 
+// ===== نافذة اختيار الحصة =====
+let periodModalState = {
+    studentId: null,
+    mode: null,
+    period: null,
+    minutes: null
+};
+
+function openPeriodModal(sid, mode) {
+    const s = State.students.find(function(x) { return x.id === sid; });
+    if (!s) return;
+
+    periodModalState = { studentId: sid, mode: mode, period: null, minutes: null };
+
+    const modal = document.getElementById("periodModal");
+    const title = document.getElementById("periodModalTitle");
+    const studentInfo = document.getElementById("periodModalStudent");
+    const minutesSection = document.getElementById("minutesSection");
+
+    if (mode === "escape") {
+        title.textContent = "🏃 تسجيل هروب";
+        minutesSection.style.display = "none";
+        modal.classList.add("escape-mode");
+        modal.classList.remove("late-mode");
+    } else {
+        title.textContent = "⏰ تسجيل تأخير";
+        minutesSection.style.display = "block";
+        modal.classList.add("late-mode");
+        modal.classList.remove("escape-mode");
+    }
+
+    studentInfo.textContent = "الطالب: " + s.nameAr;
+    
+    document.querySelectorAll(".period-btn").forEach(function(b) { b.classList.remove("selected"); });
+    document.querySelectorAll(".minutes-btn").forEach(function(b) { b.classList.remove("selected"); });
+    const noteEl = document.getElementById("periodNote");
+    if (noteEl) noteEl.value = "";
+
+    modal.classList.add("show");
+}
+
+function selectPeriod(p) {
+    periodModalState.period = p;
+    document.querySelectorAll(".period-btn").forEach(function(b) {
+        b.classList.toggle("selected", parseInt(b.textContent) === p);
+    });
+}
+
+function selectMinutes(m) {
+    periodModalState.minutes = m;
+    document.querySelectorAll(".minutes-btn").forEach(function(b) {
+        const val = b.textContent.replace("+", "");
+        b.classList.toggle("selected", parseInt(val) === m);
+    });
+}
+
+function confirmPeriodSelection() {
+    if (!periodModalState.period) {
+        alert("⚠️ يجب تحديد رقم الحصة");
+        return;
+    }
+    if (periodModalState.mode === "late" && !periodModalState.minutes) {
+        alert("⚠️ يجب تحديد عدد دقائق التأخير");
+        return;
+    }
+
+    const sid = periodModalState.studentId;
+    State.dailySelections[sid] = {
+        status: periodModalState.mode,
+        period: periodModalState.period,
+        minutes: periodModalState.mode === "late" ? periodModalState.minutes : null
+    };
+
+    closePeriodModal();
+    renderDailyTable();
+    updateDailyCounters();
+}
+
+function cancelPeriodSelection() {
+    closePeriodModal();
+}
+
+function closePeriodModal() {
+    const modal = document.getElementById("periodModal");
+    if (modal) modal.classList.remove("show", "escape-mode", "late-mode");
+    periodModalState = { studentId: null, mode: null, period: null, minutes: null };
+}
+
 // ===== صفحة الطالب =====
 function openStudent(sid) {
     const s = State.students.find(function(x) { return x.id === sid; });
     if (!s) return;
     const records = State.records.filter(function(r) { return r.student_id === sid; })
                                  .sort(function(a, b) { return (b.date || "").localeCompare(a.date || ""); });
-    const absent = records.filter(function(r) { return r.status === "absent"; }).length;
-    const excused = records.filter(function(r) { return r.status === "excused"; }).length;
-    const color = getStatusColor(absent);
-    const status = getStatusText(absent);
-    const level = getWarningLevel(absent);
+    const absent = Attendance.countAbsent(State, sid);
+    const excused = Attendance.countExcused(State, sid);
+    const escape = Attendance.countEscape(State, sid);
+    const late = Attendance.countLate(State, sid);
+    const alertTotal = Attendance.countForAlerts(State, sid);
+    const color = getStatusColor(alertTotal);
+    const status = getStatusText(alertTotal);
+    const level = getWarningLevel(alertTotal);
     const classInfo = getClassById(s.classId);
 
-    function statusBadge(st) {
+    function statusBadge(st, r) {
         if (st === "present") return '<span class="badge badge-green">✅ حاضر</span>';
         if (st === "absent")  return '<span class="badge badge-red">❌ غائب</span>';
         if (st === "excused") return '<span class="badge badge-excused">📝 بعذر</span>';
+        if (st === "escape")  return '<span class="badge badge-escape">🏃 هروب (ح' + (r.period || "?") + ')</span>';
+        if (st === "late")    return '<span class="badge badge-late">⏰ تأخير (' + (r.minutes || "?") + 'د ح' + (r.period || "?") + ')</span>';
         return "-";
     }
 
@@ -463,7 +553,7 @@ function openStudent(sid) {
                 '<td>' + (i + 1) + '</td>' +
                 '<td>' + r.date + '</td>' +
                 '<td>' + formatDateAr(r.date).split("(")[1].replace(")", "") + '</td>' +
-                '<td>' + statusBadge(r.status) + '</td>' +
+                '<td>' + statusBadge(r.status, r) + '</td>' +
                 '<td><button class="btn btn-small btn-danger" onclick="deleteRecord(' + r.id + ', ' + sid + ')">🗑️ حذف</button></td>' +
                 '</tr>';
         });
@@ -480,6 +570,8 @@ function openStudent(sid) {
             '<div class="student-stats">' +
                 '<div class="stat-box"><span class="stat-num" style="color:var(--red);">' + absent + '</span><span class="stat-lbl">❌ غائب</span></div>' +
                 '<div class="stat-box"><span class="stat-num" style="color:var(--excused);">' + excused + '</span><span class="stat-lbl">📝 بعذر</span></div>' +
+                '<div class="stat-box"><span class="stat-num" style="color:var(--escape);">' + escape + '</span><span class="stat-lbl">🏃 هروب</span></div>' +
+                '<div class="stat-box"><span class="stat-num" style="color:var(--late);">' + late + '</span><span class="stat-lbl">⏰ تأخير</span></div>' +
                 '<div class="stat-box"><span class="stat-lbl">' + status + '</span></div>' +
             '</div>' +
             (level > 0 ? '<div style="margin-top:15px;"><button class="btn btn-warning" onclick="showWarning(' + sid + ')">📨 طباعة إنذار</button></div>' : '') +
@@ -518,7 +610,7 @@ function renderReports() {
 
     container.innerHTML = '<div class="table-wrap"><table><thead><tr>' +
         '<th style="width:50px;">#</th><th>اسم الطالب</th><th>رقم الطالب</th>' +
-        '<th>غائب</th><th>بعذر</th><th>الإجمالي</th><th>الحالة</th><th>تواريخ الغياب</th>' +
+        '<th>غائب</th><th>بعذر</th><th>هروب</th><th>تأخير</th><th>الإجمالي</th><th>الحالة</th><th>تواريخ الغياب</th>' +
         '</tr></thead><tbody>' +
         rows.map(function(r, i) {
             return '<tr class="row-' + r.color + '"><td>' + (i + 1) + '</td>' +
@@ -526,6 +618,8 @@ function renderReports() {
                 '<td>' + r.number + '</td>' +
                 '<td><span class="badge badge-red">' + r.absent + '</span></td>' +
                 '<td><span class="badge badge-excused">' + r.excused + '</span></td>' +
+                '<td><span class="badge badge-escape">' + r.escape + '</span></td>' +
+                '<td><span class="badge badge-late">' + r.late + '</span></td>' +
                 '<td><strong>' + r.total + '</strong></td>' +
                 '<td>' + r.status + '</td>' +
                 '<td style="font-size:0.8em; color:#555; direction:ltr; text-align:left;">' + (r.displayDates.length ? r.displayDates.join(" - ") : '<span style="color:#999;">—</span>') + '</td></tr>';
@@ -548,7 +642,7 @@ function renderAlerts() {
 
     const students = Students.getByClass(State, State.currentClassId);
     const alerts = students.map(function(s) {
-        return { s: s, total: Attendance.countAbsent(State, s.id) };
+        return { s: s, total: Attendance.countForAlerts(State, s.id) };
     }).filter(function(x) { return x.total >= WARNING_THRESHOLD; })
       .sort(function(a, b) { return b.total - a.total; });
 
@@ -568,12 +662,12 @@ function renderAlerts() {
         return '<div class="alert alert-' + (color === "red" ? "error" : color === "orange" ? "warning" : "info") + '" style="margin-bottom:12px;">' +
             '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; align-items:center;">' +
             '<div><strong style="font-size:1.05em;">' + s.nameAr + '</strong><div style="font-size:0.85em; color:#666;">' + s.number + '</div><div style="margin-top:6px;">' + msg + '</div></div>' +
-            '<div style="text-align:center;"><div style="font-size:2em; font-weight:700;">' + total + '</div><div style="font-size:0.85em;">غياب بدون عذر</div>' +
+            '<div style="text-align:center;"><div style="font-size:2em; font-weight:700;">' + total + '</div><div style="font-size:0.85em;">إجمالي محتسب</div>' +
             '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn btn-small btn-info" onclick="openStudent(' + s.id + ')">📋 التفاصيل</button><button class="btn btn-small btn-warning" onclick="showWarning(' + s.id + ')">📨 إنذار</button></div></div></div></div>';
     }).join("");
 }
 
-// ===== إدارة الطلاب (للمدير) =====
+// ===== إدارة الطلاب =====
 function renderAdminStudents() {
     const select = document.getElementById("adminClassSelect");
     if (!select) return;
@@ -656,10 +750,6 @@ function importFromExcel() {
         let html = '<span class="success">✅ تم استيراد ' + result.added + ' طالب';
         if (result.skipped > 0) html += ' — تم تخطي ' + result.skipped;
         html += '</span>';
-        if (result.errors && result.errors.length > 0) {
-            html += '<div style="font-size:0.8em; color:#856404; margin-top:5px;">' +
-                result.errors.slice(0, 5).join('<br>') + '</div>';
-        }
         msg.innerHTML = html;
         fileInput.value = "";
         autoSave(300);
@@ -667,7 +757,7 @@ function importFromExcel() {
     });
 }
 
-// ===== إدارة المستخدمين (للمدير) =====
+// ===== إدارة المستخدمين =====
 function renderAdminUsers() {
     const select = document.getElementById("newClassId");
     if (select && !select.innerHTML.trim()) {
@@ -746,23 +836,36 @@ function removeUser(username) {
 function showWarning(sid) {
     const s = State.students.find(function(x) { return x.id === sid; });
     if (!s) return;
-    const absent = Attendance.countAbsent(State, sid);
-    const level = getWarningLevel(absent);
+    const total = Attendance.countForWarnings(State, sid);
+    const level = getWarningLevel(total);
     if (level === 0) { alert("هذا الطالب منتظم"); return; }
+    
     const absentDates = Attendance.getAbsentDates(State, sid);
+    const escapeDetails = Attendance.getEscapeDetails(State, sid);
     const warningDate = todayISO();
     const warningNumber = "غ/م/" + warningDate.replace(/-/g, "") + "/" + sid;
     const classInfo = getClassById(s.classId);
     const teacher = classInfo ? classInfo.teacher : "—";
     const quality = classInfo ? classInfo.quality : "—";
 
+    let detailsHTML = "";
+    if (absentDates.length > 0) {
+        detailsHTML += "<p><strong>أيام الغياب الكامل:</strong></p>" +
+            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #dc3545; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + absentDates.join(" - ") + "</p>";
+    }
+    if (escapeDetails.length > 0 && COUNT_IN_WARNINGS.ESCAPE) {
+        const escStr = escapeDetails.map(function(e) { return e.date + " (ح" + e.period + ")"; }).join(" - ");
+        detailsHTML += "<p><strong>أيام الهروب:</strong></p>" +
+            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #fd7e14; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + escStr + "</p>";
+    }
+
     let titleText = "", titleClass = "", body = "", rec = "";
     if (level === 1) {
         titleText = "📌 إنذار أول بغياب الطالب"; titleClass = "level-1";
         body = "<p>تحية طيبة وبعد،</p>" +
             "<p>يُهدي مدير " + SCHOOL_INFO.name + " إليكم أطيب التحيات.</p>" +
-            "<p>نظرًا لأهمية المتابعة المستمرة لشؤون الطلبة، نلفت عنايتكم إلى أن الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، قد تجاوز عدد أيام غيابه الحد المسموح به، حيث بلغ <span class=\"number-badge\">" + absent + " أيام</span>، وهي " + numberToArabicWords(absent) + "، وجاءت على النحو الآتي:</p>" +
-            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #ffc107; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + absentDates.join(" - ") + "</p>" +
+            "<p>نلفت عنايتكم إلى أن الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، قد تجاوز عدد أيام غيابه الحد المسموح به، حيث بلغ <span class=\"number-badge\">" + total + " أيام</span>، وجاءت على النحو الآتي:</p>" +
+            detailsHTML +
             "<p>وحرصًا منا على مصلحة الطالب التعليمية، نرجو من سيادتكم التكرم بمتابعة ابنكم الكريم وحثّه على الالتزام بالدوام المدرسي.</p>";
         rec = "<h4>📋 التوصيات المطلوبة من ولي الأمر:</h4><ul>" +
             "<li>متابعة دوام ابنكم اليومي.</li>" +
@@ -772,9 +875,9 @@ function showWarning(sid) {
     } else if (level === 2) {
         titleText = "⚠️ إنذار ثانٍ بغياب الطالب"; titleClass = "level-2";
         body = "<p>تحية طيبة وبعد،</p>" +
-            "<p>بالإشارة إلى الموضوع أعلاه، واستكمالاً للإنذار الأول، وبناءً على ما رصدته إدارة " + SCHOOL_INFO.name + " من استمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في الغياب دون عذر مشروع، نلفت عنايتكم إلى أن عدد أيام غيابه قد بلغ <span class=\"number-badge\">" + absent + " يومًا</span>.</p>" +
-            "<p>وتجدر الإشارة إلى أن هذه الغيابات المتكررة تؤثر سلبًا على التحصيل الأكاديمي للطالب، وتُعدّ مخالفة صريحة لتعليمات وزارة التربية والتعليم.</p>" +
-            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #fd7e14; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + absentDates.join(" - ") + "</p>" +
+            "<p>بالإشارة إلى الموضوع أعلاه، واستكمالاً للإنذار الأول، نلفت عنايتكم إلى أن الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، لا يزال مستمراً في الغياب، وقد بلغ عدد أيام غيابه <span class=\"number-badge\">" + total + " يومًا</span>.</p>" +
+            detailsHTML +
+            "<p>وتجدر الإشارة إلى أن هذه الغيابات تؤثر سلبًا على التحصيل الأكاديمي للطالب.</p>" +
             "<p>نرجو من سيادتكم سرعة التواصل مع إدارة المدرسة خلال <strong>ثلاثة أيام</strong> من تاريخ هذا الإنذار.</p>";
         rec = "<h4>⚠️ التوصيات العاجلة:</h4><ul>" +
             "<li>الحضور إلى المدرسة للاجتماع مع مربي الصف والإدارة.</li>" +
@@ -784,9 +887,9 @@ function showWarning(sid) {
     } else {
         titleText = "🚨 إنذار نهائي بغياب الطالب"; titleClass = "level-3";
         body = "<p>تحية طيبة وبعد،</p>" +
-            "<p>بعد استنفاد كافة الإنذارات السابقة، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في التغيب دون عذر مشروع، نلفت عنايتكم إلى أن عدد أيام غيابه قد بلغ <span class=\"number-badge\">" + absent + " يومًا</span>، وهو تجاوز جسيم للتعليمات النظامية.</p>" +
+            "<p>بعد استنفاد كافة الإنذارات السابقة، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في التغيب دون عذر مشروع، نلفت عنايتكم إلى أن عدد أيام غيابه قد بلغ <span class=\"number-badge\">" + total + " يومًا</span>، وهو تجاوز جسيم للتعليمات النظامية.</p>" +
+            detailsHTML +
             "<p>لذا تُرسل إليكم إدارة " + SCHOOL_INFO.name + " هذا <strong style=\"color:#dc3545;\">الإنذار النهائي</strong>، مُشدّدةً على ضرورة التزام الطالب بالدوام فورًا.</p>" +
-            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #dc3545; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + absentDates.join(" - ") + "</p>" +
             "<p>وفي حال استمرار الغياب، ستضطر المدرسة لرفع الأمر إلى مديرية التربية والتعليم لاتخاذ الإجراءات القانونية.</p>";
         rec = "<h4>🚨 إجراءات مطلوبة بشكل عاجل:</h4><ul>" +
             "<li><strong>الحضور الفوري إلى المدرسة</strong> خلال يومين.</li>" +
@@ -803,7 +906,7 @@ function showWarning(sid) {
         '<div class="warning-title ' + titleClass + '">' + titleText + '</div>' +
         '<div style="text-align:center; margin-bottom:20px;"><strong style="font-size:1.1em;">المكرم ولي أمر الطالب / ' + s.nameAr + '</strong><br><span style="color:#666; font-size:0.92em;">حفظه الله ورعاه</span></div>' +
         '<div class="student-info-box"><table><tr><td class="label">اسم الطالب:</td><td>' + s.nameAr + '</td><td class="label">رقم الطالب:</td><td>' + s.number + '</td></tr>' +
-        '<tr><td class="label">الصف:</td><td>' + (classInfo ? classInfo.name : '') + '</td><td class="label">عدد أيام الغياب:</td><td><strong style="color:#dc3545;">' + absent + ' يومًا</strong></td></tr></table></div>' +
+        '<tr><td class="label">الصف:</td><td>' + (classInfo ? classInfo.name : '') + '</td><td class="label">عدد أيام الغياب:</td><td><strong style="color:#dc3545;">' + total + ' يومًا</strong></td></tr></table></div>' +
         '<div class="warning-body">' + body + '</div>' +
         '<div class="recommendations">' + rec + '</div>' +
         '<p style="text-align:center; margin-top:25px; font-weight:600; color:#1e3c72;">وتفضلوا بقبول فائق الاحترام والتقدير</p>' +
@@ -892,9 +995,11 @@ function renderAll() {
     function showPassword() {
         document.getElementById("setupStep").style.display = "none";
         document.getElementById("passwordStep").style.display = "block";
-        setTimeout(function() { document.getElementById("usernameInput").focus(); }, 200);
+        setTimeout(function() { 
+            const el = document.getElementById("usernameInput");
+            if (el) el.focus(); 
+        }, 200);
         
-        // توليد QR Code
         setTimeout(function() {
             const qrContainer = document.getElementById("qrCode");
             if (qrContainer && typeof QRCode !== "undefined") {
@@ -1002,11 +1107,13 @@ function renderAll() {
             }
         });
 
-        document.getElementById("passwordInput").addEventListener("keypress", function(e) {
+        const pwInput = document.getElementById("passwordInput");
+        const userInput = document.getElementById("usernameInput");
+        if (pwInput) pwInput.addEventListener("keypress", function(e) {
             if (e.key === "Enter") { e.preventDefault(); checkLogin(); }
         });
-        document.getElementById("usernameInput").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") { e.preventDefault(); document.getElementById("passwordInput").focus(); }
+        if (userInput) userInput.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") { e.preventDefault(); if (pwInput) pwInput.focus(); }
         });
 
         const settings = Cloud.getSettings();
@@ -1085,141 +1192,51 @@ async function startApp() {
 
 window.startApp = startApp;
 
-// ==========================================================================
-// ⚙️ إعادة إعداد الاتصال السحابي (للمدير فقط)
-// ==========================================================================
+// ===== إعادة إعداد الاتصال السحابي =====
 function resetCloudSettings() {
-    // التحقق من صلاحية المدير
     if (!State.currentUser || State.currentUser.role !== "admin") {
         alert("❌ هذه الميزة للمدير فقط");
         return;
     }
     
-    // التأكيد الأول
-    if (!confirm("⚠️ سيتم حذف إعدادات JSONBin من هذا الجهاز.\n\nملاحظة: بياناتك في السحابة لن تُحذف.\n\nهل أنت متأكد؟")) {
-        return;
-    }
+    if (!confirm("⚠️ سيتم حذف إعدادات JSONBin من هذا الجهاز.\n\nملاحظة: بياناتك في السحابة لن تُحذف.\n\nهل أنت متأكد؟")) return;
+    if (!confirm("⚠️ تأكيد نهائي:\n\nسيتم تسجيل خروجك وإعادة فتح شاشة الإعداد.")) return;
     
-    // التأكيد النهائي
-    if (!confirm("⚠️ تأكيد نهائي:\n\nسيتم تسجيل خروجك وإعادة فتح شاشة الإعداد.")) {
-        return;
-    }
-    
-    // امسح الإعدادات والجلسة
     Cloud.clearSettings();
     try {
         localStorage.removeItem(CLOUD_CONFIG.SESSION_KEY);
     } catch(e) {}
     
-    // أعد تحميل الصفحة
     location.reload();
 }
 
-// تصدير الدالة عالمياً
+// تصدير جميع الدوال عالمياً (مهم لأزرار HTML onclick)
 window.resetCloudSettings = resetCloudSettings;
-
-
-
-/* ==========================================================================
-   ⏰ نافذة اختيار الحصة (هروب/تأخير)
-   ========================================================================== */
-
-let periodModalState = {
-    studentId: null,
-    mode: null,        // 'escape' | 'late'
-    period: null,
-    minutes: null
-};
-
-function openPeriodModal(sid, mode) {
-    const s = State.students.find(function(x) { return x.id === sid; });
-    if (!s) return;
-
-    periodModalState = {
-        studentId: sid,
-        mode: mode,
-        period: null,
-        minutes: null
-    };
-
-    // إعداد النافذة
-    const modal = document.getElementById("periodModal");
-    const title = document.getElementById("periodModalTitle");
-    const studentInfo = document.getElementById("periodModalStudent");
-    const minutesSection = document.getElementById("minutesSection");
-
-    if (mode === "escape") {
-        title.textContent = "🏃 تسجيل هروب";
-        minutesSection.style.display = "none";
-        modal.classList.add("escape-mode");
-        modal.classList.remove("late-mode");
-    } else {
-        title.textContent = "⏰ تسجيل تأخير";
-        minutesSection.style.display = "block";
-        modal.classList.add("late-mode");
-        modal.classList.remove("escape-mode");
-    }
-
-    studentInfo.textContent = "الطالب: " + s.nameAr;
-    
-    // مسح التحديدات
-    document.querySelectorAll(".period-btn").forEach(function(b) { b.classList.remove("selected"); });
-    document.querySelectorAll(".minutes-btn").forEach(function(b) { b.classList.remove("selected"); });
-    document.getElementById("periodNote").value = "";
-
-    modal.classList.add("show");
-}
-
-function selectPeriod(p) {
-    periodModalState.period = p;
-    document.querySelectorAll(".period-btn").forEach(function(b) {
-        b.classList.toggle("selected", parseInt(b.textContent) === p);
-    });
-}
-
-function selectMinutes(m) {
-    periodModalState.minutes = m;
-    const labels = document.querySelectorAll(".minutes-btn");
-    labels.forEach(function(b) {
-        const val = b.textContent.replace("+", "");
-        b.classList.toggle("selected", parseInt(val) === m);
-    });
-}
-
-function confirmPeriodSelection() {
-    if (!periodModalState.period) {
-        alert("⚠️ يجب تحديد رقم الحصة");
-        return;
-    }
-    if (periodModalState.mode === "late" && !periodModalState.minutes) {
-        alert("⚠️ يجب تحديد عدد دقائق التأخير");
-        return;
-    }
-
-    const sid = periodModalState.studentId;
-    State.dailySelections[sid] = {
-        status: periodModalState.mode,
-        period: periodModalState.period,
-        minutes: periodModalState.mode === "late" ? periodModalState.minutes : null
-    };
-
-    closePeriodModal();
-    renderDailyTable();  // إعادة رسم الجدول لعرض التحديث
-    updateDailyCounters();
-}
-
-function cancelPeriodSelection() {
-    closePeriodModal();
-}
-
-function closePeriodModal() {
-    document.getElementById("periodModal").classList.remove("show", "escape-mode", "late-mode");
-    periodModalState = { studentId: null, mode: null, period: null, minutes: null };
-}
-
-// تصدير الدوال عالمياً
 window.openPeriodModal = openPeriodModal;
 window.selectPeriod = selectPeriod;
 window.selectMinutes = selectMinutes;
 window.confirmPeriodSelection = confirmPeriodSelection;
 window.cancelPeriodSelection = cancelPeriodSelection;
+window.setStatus = setStatus;
+window.navigate = navigate;
+window.selectClass = selectClass;
+window.openStudent = openStudent;
+window.deleteRecord = deleteRecord;
+window.showWarning = showWarning;
+window.closeWarning = closeWarning;
+window.syncFromCloud = syncFromCloud;
+window.setDateToday = setDateToday;
+window.changeDay = changeDay;
+window.saveDailyRecord = saveDailyRecord;
+window.markAll = markAll;
+window.resetAll = resetAll;
+window.renderReports = renderReports;
+window.exportReportCSV = exportReportCSV;
+window.addStudentManual = addStudentManual;
+window.removeStudent = removeStudent;
+window.importFromExcel = importFromExcel;
+window.addUserManual = addUserManual;
+window.changeUserPassword = changeUserPassword;
+window.removeUser = removeUser;
+window.exportBackup = exportBackup;
+window.importBackup = importBackup;
