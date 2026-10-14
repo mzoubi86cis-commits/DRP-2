@@ -299,20 +299,17 @@ function renderDailyTable() {
 
 
 function setStatus(sid, status) {
-    // عند اختيار حاضر/غائب/بعذر - إزالة أي تفاصيل سابقة
-    if (State.dailySelections[sid] && typeof State.dailySelections[sid] === "object") {
-        if (State.dailySelections[sid].status === status) {
-            delete State.dailySelections[sid];
-        } else {
-            State.dailySelections[sid] = status;
-        }
+    const current = State.dailySelections[sid];
+    
+    // استخراج الحالة الحالية (قد تكون كائن)
+    const currentStatus = (current && typeof current === "object") ? current.status : current;
+    
+    if (currentStatus === status) {
+        delete State.dailySelections[sid];
     } else {
-        if (State.dailySelections[sid] === status) {
-            delete State.dailySelections[sid];
-        } else {
-            State.dailySelections[sid] = status;
-        }
+        State.dailySelections[sid] = status;
     }
+    
     refreshRowButtons(sid);
     updateDailyCounters();
 }
