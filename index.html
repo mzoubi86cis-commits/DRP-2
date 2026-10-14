@@ -335,6 +335,59 @@
 <footer>© 2026-2027 - مدرسة الطرة الثانوية للبنين | نظام BTEC</footer>
 </div>
 
+
+<!-- ===================== نافذة اختيار الحصة ===================== -->
+<div class="period-modal" id="periodModal">
+    <div class="period-modal-content">
+        <h3 id="periodModalTitle">⏰ تحديد التفاصيل</h3>
+        <p id="periodModalStudent" style="color:#666; margin-bottom:15px; font-size:0.95em;"></p>
+
+        <!-- اختيار الحصة -->
+        <div class="modal-section">
+            <label>📚 رقم الحصة:</label>
+            <div class="period-buttons" id="periodButtons">
+                <button class="period-btn" onclick="selectPeriod(1)">1</button>
+                <button class="period-btn" onclick="selectPeriod(2)">2</button>
+                <button class="period-btn" onclick="selectPeriod(3)">3</button>
+                <button class="period-btn" onclick="selectPeriod(4)">4</button>
+                <button class="period-btn" onclick="selectPeriod(5)">5</button>
+                <button class="period-btn" onclick="selectPeriod(6)">6</button>
+                <button class="period-btn" onclick="selectPeriod(7)">7</button>
+            </div>
+        </div>
+
+        <!-- دقائق التأخير (تظهر للتأخير فقط) -->
+        <div class="modal-section" id="minutesSection" style="display:none;">
+            <label>⏱️ عدد دقائق التأخير:</label>
+            <div class="minutes-buttons" id="minutesButtons">
+                <button class="minutes-btn" onclick="selectMinutes(5)">5</button>
+                <button class="minutes-btn" onclick="selectMinutes(10)">10</button>
+                <button class="minutes-btn" onclick="selectMinutes(15)">15</button>
+                <button class="minutes-btn" onclick="selectMinutes(20)">20</button>
+                <button class="minutes-btn" onclick="selectMinutes(30)">30</button>
+                <button class="minutes-btn" onclick="selectMinutes(45)">45+</button>
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <label>📝 ملاحظة (اختياري):</label>
+            <input type="text" id="periodNote" placeholder="سبب الهروب أو التأخير..." 
+                   style="width:100%; padding:10px; border:1px solid #ced4da; border-radius:8px; font-family:inherit;">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-success" onclick="confirmPeriodSelection()">✅ حفظ</button>
+            <button class="btn btn-secondary" onclick="cancelPeriodSelection()">❌ إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== نافذة الإنذار ===================== -->
+<div class="warning-modal" id="warningModal">
+    <div class="warning-paper" id="warningPaper"></div>
+</div>
+
+    
 <!-- ===================== نافذة الإنذار ===================== -->
 <div class="warning-modal" id="warningModal">
     <div class="warning-paper" id="warningPaper"></div>
