@@ -198,7 +198,7 @@ nav button.hidden { display: none; }
 }
 
 /* ==========================================================================
-   البطاقات الإحصائية - صف واحد أنيق
+   البطاقات الإحصائية - صف واحد
    ========================================================================== */
 .stats-cards {
     display: grid;
@@ -249,20 +249,6 @@ nav button.hidden { display: none; }
 .card.excused { background: linear-gradient(135deg, #17a2b8, #117a8b); }
 .card.escape { background: linear-gradient(135deg, #fd7e14, #dc6502); }
 .card.late { background: linear-gradient(135deg, #d39e00, #a67c00); }
-
-/* ===== استجابة الشاشات ===== */
-@media (max-width: 1200px) {
-    .stats-cards { grid-template-columns: repeat(5, 1fr); }
-}
-@media (max-width: 900px) {
-    .stats-cards { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 600px) {
-    .stats-cards { grid-template-columns: repeat(2, 1fr); }
-    .card h3 { font-size: 0.7em; }
-    .card .num { font-size: 1.25em; }
-    .card { min-height: 65px; padding: 10px 6px; }
-}
 
 /* ===================== الأدوات ===================== */
 .toolbar {
@@ -323,24 +309,19 @@ nav button.hidden { display: none; }
     width: 100%;
     background: white;
     border-radius: 10px;
-    overflow: hidden;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     overflow-x: auto;
-    display: block;   /* ← مهم */
+    display: block;
 }
 
 .table-wrap table {
-    width: 100% !important;
-    min-width: 100% !important;
+    width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
     table-layout: auto;
-    display: table;   /* ← مهم */
+    display: table;
 }
-.table-wrap table {
-    width: 100% !important;
-    border-collapse: collapse;
-    table-layout: auto;
-}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -368,7 +349,6 @@ td {
 
 tbody tr:hover { background: #f8f9fa; }
 
-/* عمود الرقم و اسم الطالب - محاذاة يمين */
 td:first-child,
 td:nth-child(2) {
     text-align: right;
@@ -376,13 +356,13 @@ td:nth-child(2) {
 
 td:nth-child(2) {
     font-weight: 500;
-    min-width: 200px;
+    min-width: 180px;
 }
 
-/* عمود الإجراءات */
 td:last-child {
     text-align: center;
-    min-width: 150px;
+    min-width: 140px;
+    white-space: nowrap;
 }
 
 .student-link {
@@ -394,7 +374,6 @@ td:last-child {
 .student-link:hover { text-decoration: underline; }
 .en-name { color: var(--muted); font-size: 0.85em; direction: ltr; text-align: left; }
 
-/* صفوف ملونة حسب الحالة */
 tr.row-green { border-right: 5px solid var(--green); }
 tr.row-yellow { border-right: 5px solid var(--yellow); background: #fff9e6; }
 tr.row-orange { border-right: 5px solid var(--orange); background: #fff3e6; }
@@ -419,19 +398,26 @@ tr.row-red { border-right: 5px solid var(--red); background: #ffe6e6; }
 .badge-late { background: #fff3cd; color: #856404; }
 .badge-admin { background: #ffe5b4; color: #b35900; }
 
-/* ===================== أزرار الحالة اليومية ===================== */
+/* ==========================================================================
+   أزرار الحالة اليومية - أفقية دائماً
+   ========================================================================== */
 .status-group {
     display: inline-flex;
     gap: 4px;
     border-radius: 8px;
-    overflow: hidden;
     border: 1px solid var(--border);
     background: #f8f9fa;
-    flex-wrap: wrap;
-    padding: 2px;
+    flex-wrap: nowrap;
+    padding: 3px;
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
+.status-group::-webkit-scrollbar { display: none; }
+
 .status-btn {
-    padding: 6px 12px;
+    padding: 7px 12px;
     border: none;
     background: transparent;
     cursor: pointer;
@@ -442,6 +428,7 @@ tr.row-red { border-right: 5px solid var(--red); background: #ffe6e6; }
     color: #555;
     white-space: nowrap;
     border-radius: 6px;
+    flex-shrink: 0;
 }
 .status-btn:hover { background: #e9ecef; }
 .status-btn.active-present { background: var(--green); color: white; font-weight: 700; }
@@ -760,15 +747,6 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     box-shadow: 0 3px 10px rgba(211,158,0,0.3);
 }
 
-@media (max-width: 600px) {
-    .period-btn,
-    .minutes-btn {
-        min-width: 45px;
-        height: 45px;
-        font-size: 1rem;
-    }
-}
-
 /* ==========================================================================
    الطباعة
    ========================================================================== */
@@ -806,8 +784,6 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
         display: none !important;
     }
     
-    .warning-modal { display: block !important; }
-    
     .warning-paper {
         position: static !important;
         margin: 0 auto !important;
@@ -826,32 +802,21 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     .warning-paper .letterhead .school-name { font-size: 15pt; margin-bottom: 2px; }
     .warning-paper .letterhead .school-info { font-size: 8.5pt; }
     .warning-paper .letterhead .ref { margin-top: 5px; font-size: 8.5pt; }
-    
     .warning-title { font-size: 13pt; padding: 5px; margin: 8px 0; }
-    
     .student-info-box { padding: 6px 10px; margin-bottom: 8px; }
     .student-info-box td { padding: 2px 5px; font-size: 9pt; }
     .student-info-box td.label { width: 90px; font-size: 9pt; }
-    
     .warning-body { font-size: 10pt; line-height: 1.6; margin: 8px 0; }
     .warning-body p { margin-bottom: 5px; text-indent: 15px; }
     .warning-body .number-badge { padding: 1px 6px; font-size: 9pt; }
-    
     .recommendations { padding: 6px 12px; margin: 8px 0; }
     .recommendations h4 { font-size: 10pt; margin-bottom: 4px; }
     .recommendations ul { padding-right: 18px; }
     .recommendations li { font-size: 9pt; margin-bottom: 1px; }
-    
-    .signatures {
-        margin-top: 12px;
-        padding-top: 6px;
-        gap: 8px;
-        page-break-inside: avoid;
-    }
+    .signatures { margin-top: 12px; padding-top: 6px; gap: 8px; }
     .signatures .sig-box { padding: 3px; }
     .signatures .sig-title { font-size: 9.5pt; margin-bottom: 15px; }
     .signatures .sig-line { font-size: 9.5pt; padding-top: 3px; }
-    
     .warning-date { margin-top: 8px; font-size: 8.5pt; }
     .warning-actions { display: none !important; }
 }
@@ -868,27 +833,33 @@ html, body {
 
 * { touch-action: manipulation; }
 
+@media (max-width: 1200px) {
+    .stats-cards { grid-template-columns: repeat(5, 1fr); }
+}
+@media (max-width: 900px) {
+    .stats-cards { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 768px) {
+    .stats-cards { grid-template-columns: repeat(3, 1fr); }
+    .card h3 { font-size: 0.7em; }
+    .card .num { font-size: 1.3em; }
+    .card { min-height: 65px; padding: 10px 6px; }
+    
     .btn {
-        min-height: 44px;
-        padding: 12px 18px;
-        font-size: 0.95em;
-        border-radius: 8px;
+        min-height: 40px;
+        padding: 10px 14px;
+        font-size: 0.9em;
     }
-    .btn-small { min-height: 36px; padding: 8px 14px; font-size: 0.85em; }
-    .status-btn { min-height: 40px; padding: 10px 14px; font-size: 0.85em; }
+    .btn-small { min-height: 34px; padding: 6px 10px; font-size: 0.8em; }
     
     input, select, textarea {
-        min-height: 44px;
+        min-height: 42px;
         font-size: 16px !important;
-        padding: 10px 12px;
-        border-radius: 8px;
+        padding: 8px 10px;
     }
     
-    .nav-btn { min-height: 44px; padding: 12px 16px; font-size: 0.9em; }
-    
-    .stat-box { min-width: 110px; padding: 10px 16px; }
-    .stat-num { font-size: 1.6em; }
+    .nav-btn { min-height: 42px; padding: 10px 14px; font-size: 0.88em; }
     
     .daily-controls {
         flex-direction: column;
@@ -925,17 +896,41 @@ html, body {
     .warning-paper { padding: 20px 15px; }
     .signatures { grid-template-columns: 1fr; gap: 20px; }
     
-    /* أزرار الحالة على الجوال - شبكة 2x2 */
+    /* ✅ أزرار الحالة - أفقية مع تمرير */
     .status-group {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 4px;
+        padding: 3px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
+    .status-group::-webkit-scrollbar { display: none; }
+    
     .status-btn {
-        width: 100%;
+        flex-shrink: 0;
         font-size: 0.78em;
-        padding: 8px 4px;
+        padding: 8px 10px;
+        white-space: nowrap;
+        min-height: 38px;
     }
+    
+    table { font-size: 0.85em; }
+    th, td { padding: 8px 6px; }
+    
+    td:last-child { white-space: nowrap; }
+    
+    .period-btn,
+    .minutes-btn {
+        min-width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .stats-cards { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 380px) {
@@ -953,7 +948,7 @@ html, body {
 .table-wrap::-webkit-scrollbar-thumb { background: #2a5298; border-radius: 4px; }
 
 /* ==========================================================================
-   شاشة البداية (Splash Screen)
+   شاشة البداية
    ========================================================================== */
 #splashScreen {
     position: fixed;
@@ -993,15 +988,4 @@ html, body {
 .btn, .nav-btn, .status-btn, .class-tab {
     -webkit-user-select: none;
     user-select: none;
-}
-
-/* إصلاح إضافي للجدول */
-#studentsTable, #dailyTable, #adminStudentsTable, #usersTable, #reportsTable {
-    width: 100%;
-    display: table;
-}
-
-.table-wrap > table,
-.table-wrap table {
-    min-width: 100%;
 }
