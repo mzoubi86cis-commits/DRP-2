@@ -2,22 +2,27 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>نظام الحضور والغياب - BTEC</title>
-    <link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1e3c72">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="حضور BTEC">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<!-- مكتبة قراءة ملفات Excel -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<!-- مكتبة QR Code -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
+
+<!-- ===================== شاشة البداية ===================== -->
+<div id="splashScreen">
+    <div class="splash-logo">🏫</div>
+    <h2>مدرسة الطرة الثانوية للبنين</h2>
+    <p>نظام الحضور والغياب - BTEC</p>
+</div>
 
 <!-- ===================== شاشة الدخول ===================== -->
 <div id="loginScreen">
@@ -26,7 +31,6 @@
         <h1>مدرسة الطرة الثانوية للبنين</h1>
         <p class="subtitle">نظام الحضور والغياب - BTEC</p>
 
-        <!-- خطوة إعداد السحابة -->
         <div id="setupStep" style="display: none;">
             <p class="setup-title">⚙️ إعداد الاتصال السحابي (لأول مرة فقط)</p>
             <label for="masterKeyInput">X-Master-Key</label>
@@ -36,21 +40,11 @@
             <button id="setupBtn">💾 حفظ الإعدادات</button>
             <div class="login-error" id="setupError"></div>
             <div class="login-hint">
-    💡 هذا النظام محمي. الدخول للمعلمين والإدارة فقط.
-    <br>
-    <button id="pwaInstallBtn" onclick="installPWA()" 
-            style="display:none; margin-top: 10px; background: #28a745; color: white; 
-                   border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; 
-                   font-family: inherit; font-size: 0.9em; font-weight: 600;">
-        📲 تثبيت التطبيق على جوالك
-    </button>
-</div>
+                💡 افتح <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> للحصول على المفاتيح.
+            </div>
         </div>
 
-        <!-- خطوة كلمة المرور -->
         <div id="passwordStep" style="display: none;">
-            
-            <!-- ✅ QR في صندوق أنيق داخل النموذج -->
             <div id="qrSection" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; gap: 15px;">
                 <div id="qrCode" style="flex-shrink: 0;"></div>
                 <div style="flex: 1; text-align: right;">
@@ -74,8 +68,9 @@
             <div class="login-error" id="loginError">❌ بيانات الدخول غير صحيحة</div>
             
             <div class="login-hint">
-                    💡 هذا النظام محمي. الدخول للمعلمين والإدارة فقط.
-            </div> 
+                💡 هذا النظام محمي. الدخول للمعلمين والإدارة فقط.
+                <br><a href="#" id="resetSettingsLink" style="font-size: 0.9em;">⚙️ إعادة إعداد الاتصال السحابي</a>
+            </div>
         </div>
     </div>
 </div>
@@ -132,6 +127,8 @@
                         <th>رقم الطالب</th>
                         <th>غائب</th>
                         <th>بعذر</th>
+                        <th>هروب</th>
+                        <th>تأخير</th>
                         <th>الحالة</th>
                         <th>إجراءات</th>
                     </tr>
@@ -159,13 +156,13 @@
                 <button class="btn btn-secondary btn-small" onclick="resetAll()">🔄 مسح التحديد</button>
             </div>
             <div class="daily-info">
-    <span>✅ الحاضر: <strong id="cPresent">0</strong></span>
-    <span>❌ الغائب: <strong id="cAbsent">0</strong></span>
-    <span>📝 بعذر: <strong id="cExcused">0</strong></span>
-    <span>🏃 هروب: <strong id="cEscape">0</strong></span>
-    <span>⏰ تأخير: <strong id="cLate">0</strong></span>
-    <span>❓ لم يسجل: <strong id="cUnset">0</strong></span>
-</div>
+                <span>✅ الحاضر: <strong id="cPresent">0</strong></span>
+                <span>❌ الغائب: <strong id="cAbsent">0</strong></span>
+                <span>📝 بعذر: <strong id="cExcused">0</strong></span>
+                <span>🏃 هروب: <strong id="cEscape">0</strong></span>
+                <span>⏰ تأخير: <strong id="cLate">0</strong></span>
+                <span>❓ لم يسجل: <strong id="cUnset">0</strong></span>
+            </div>
         </div>
         <div class="table-wrap">
             <table>
@@ -193,6 +190,8 @@
                     <option value="all">جميع السجلات</option>
                     <option value="absent">الغياب فقط (بدون عذر)</option>
                     <option value="excused">بعذر فقط</option>
+                    <option value="escape">هروب فقط</option>
+                    <option value="late">تأخير فقط</option>
                 </select>
             </label>
             <button class="btn btn-primary" onclick="renderReports()">🔍 عرض</button>
@@ -206,11 +205,11 @@
     <!-- ============ التنبيهات ============ -->
     <section id="page-alerts" class="page">
         <h2 class="page-title">🔔 التنبيهات والإنذارات</h2>
-        <div class="alert alert-info">ℹ️ يتم احتساب التنبيهات على <strong>الغياب بدون عذر فقط</strong>.</div>
+        <div class="alert alert-info">ℹ️ يتم احتساب التنبيهات على <strong>الغياب الكامل + الهروب</strong>.</div>
         <div id="alertsList"></div>
     </section>
 
-    <!-- ============ إدارة الطلاب (للمدير فقط) ============ -->
+    <!-- ============ إدارة الطلاب ============ -->
     <section id="page-students-admin" class="page">
         <h2 class="page-title">👥 إدارة الطلاب</h2>
 
@@ -221,7 +220,6 @@
         </div>
 
         <div class="admin-grid">
-            <!-- إضافة طالب يدوياً -->
             <div class="admin-card">
                 <h3>➕ إضافة طالب</h3>
                 <label>الاسم بالعربية</label>
@@ -234,7 +232,6 @@
                 <div id="addStudentMsg" class="msg-area"></div>
             </div>
 
-            <!-- استيراد Excel -->
             <div class="admin-card">
                 <h3>📥 استيراد من Excel</h3>
                 <p class="hint">الملف يجب أن يحتوي على 3 أعمدة: الاسم بالعربية، الاسم بالإنجليزية، رقم الطالب</p>
@@ -262,7 +259,7 @@
         </div>
     </section>
 
-    <!-- ============ إدارة المستخدمين (للمدير فقط) ============ -->
+    <!-- ============ إدارة المستخدمين ============ -->
     <section id="page-users-admin" class="page">
         <h2 class="page-title">🔑 إدارة المستخدمين</h2>
 
@@ -285,13 +282,12 @@
             <div id="addUserMsg" class="msg-area"></div>
         </div>
 
-        
-
         <div class="admin-card" style="max-width:600px; margin-top:20px; border-top: 4px solid var(--red);">
-    <h3>⚙️ إعدادات الاتصال السحابي</h3>
-    <p class="hint">⚠️ تحذير: تغيير هذه الإعدادات قد يؤدي إلى فقدان البيانات إذا كانت المفاتيح خاطئة.</p>
-    <button class="btn btn-danger" onclick="resetCloudSettings()">🔄 إعادة إعداد الاتصال السحابي</button>
-</div>
+            <h3>⚙️ إعدادات الاتصال السحابي</h3>
+            <p class="hint">⚠️ تحذير: تغيير هذه الإعدادات قد يؤدي إلى فقدان البيانات إذا كانت المفاتيح خاطئة.</p>
+            <button class="btn btn-danger" onclick="resetCloudSettings()">🔄 إعادة إعداد الاتصال السحابي</button>
+        </div>
+
         <h3 style="margin-top:30px; color:var(--primary-light);">👥 قائمة المستخدمين</h3>
         <div class="table-wrap">
             <table>
@@ -337,14 +333,12 @@
 <footer>© 2026-2027 - مدرسة الطرة الثانوية للبنين | نظام BTEC</footer>
 </div>
 
-
 <!-- ===================== نافذة اختيار الحصة ===================== -->
 <div class="period-modal" id="periodModal">
     <div class="period-modal-content">
         <h3 id="periodModalTitle">⏰ تحديد التفاصيل</h3>
         <p id="periodModalStudent" style="color:#666; margin-bottom:15px; font-size:0.95em;"></p>
 
-        <!-- اختيار الحصة -->
         <div class="modal-section">
             <label>📚 رقم الحصة:</label>
             <div class="period-buttons" id="periodButtons">
@@ -358,7 +352,6 @@
             </div>
         </div>
 
-        <!-- دقائق التأخير (تظهر للتأخير فقط) -->
         <div class="modal-section" id="minutesSection" style="display:none;">
             <label>⏱️ عدد دقائق التأخير:</label>
             <div class="minutes-buttons" id="minutesButtons">
@@ -377,7 +370,7 @@
                    style="width:100%; padding:10px; border:1px solid #ced4da; border-radius:8px; font-family:inherit;">
         </div>
 
-        <div class="modal-actions">
+        <div class="modal-actions" style="display:flex; gap:10px; margin-top:18px; justify-content:flex-end;">
             <button class="btn btn-success" onclick="confirmPeriodSelection()">✅ حفظ</button>
             <button class="btn btn-secondary" onclick="cancelPeriodSelection()">❌ إلغاء</button>
         </div>
@@ -389,60 +382,25 @@
     <div class="warning-paper" id="warningPaper"></div>
 </div>
 
-    
-<!-- ===================== نافذة الإنذار ===================== -->
-<div class="warning-modal" id="warningModal">
-    <div class="warning-paper" id="warningPaper"></div>
-</div>
-
-    <script>
-// تسجيل Service Worker
+<!-- ===================== السكربتات ===================== -->
+<script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function() {
         navigator.serviceWorker.register("service-worker.js")
-            .then(function(reg) {
-                console.log("✅ Service Worker registered:", reg.scope);
-            })
-            .catch(function(err) {
-                console.error("❌ Service Worker registration failed:", err);
-            });
+            .then(function(reg) { console.log("✅ SW registered:", reg.scope); })
+            .catch(function(err) { console.error("❌ SW failed:", err); });
     });
 }
-
-// زر التثبيت التلقائي
-let deferredPrompt;
-window.addEventListener("beforeinstallprompt", function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    
-    // إظهار زر التثبيت إذا كان موجوداً
-    const installBtn = document.getElementById("pwaInstallBtn");
-    if (installBtn) installBtn.style.display = "inline-block";
-});
-
-// دالة تثبيت التطبيق
-function installPWA() {
-    if (!deferredPrompt) {
-        alert("التطبيق مثبت مسبقاً أو غير مدعوم في هذا المتصفح");
-        return;
-    }
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(choiceResult) {
-        if (choiceResult.outcome === "accepted") {
-            console.log("✅ User accepted install");
+window.addEventListener("load", function() {
+    setTimeout(function() {
+        const splash = document.getElementById("splashScreen");
+        if (splash) {
+            splash.classList.add("hidden");
+            setTimeout(function() { splash.style.display = "none"; }, 600);
         }
-        deferredPrompt = null;
-    });
-}
-
-// إخفاء الزر بعد التثبيت
-window.addEventListener("appinstalled", function() {
-    console.log("✅ PWA installed");
-    const installBtn = document.getElementById("pwaInstallBtn");
-    if (installBtn) installBtn.style.display = "none";
+    }, 1000);
 });
 </script>
-<!-- ===================== السكربتات ===================== -->
 <script src="config.js"></script>
 <script src="cloud.js"></script>
 <script src="students.js"></script>
