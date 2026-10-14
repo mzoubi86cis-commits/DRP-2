@@ -13,47 +13,48 @@ const Attendance = {
     },
 
     // حفظ سجلات اليوم
-    saveDay: function(state, classId, date, selections) {
-        const classStudents = Students.getByClass(state, classId).map(function(s) { return s.id; });
+   saveDay: function(state, classId, date, selections) {
+    const classStudents = Students.getByClass(state, classId).map(function(s) { return s.id; });
 
-        // حذف السجلات القديمة لهذا اليوم
-        state.records = state.records.filter(function(r) {
-            return !(r.date === date && classStudents.indexOf(r.student_id) !== -1);
-        });
+    // حذف السجلات القديمة لهذا اليوم
+    state.records = state.records.filter(function(r) {
+        return !(r.date === date && classStudents.indexOf(r.student_id) !== -1);
+    });
 
-        // إضافة السجلات الجديدة
-        let maxId = state.records.reduce(function(m, r) { return Math.max(m, r.id || 0); }, 0);
-        for (const entry of Object.entries(selections)) {
-            const sid = parseInt(entry[0]);
-            if (classStudents.indexOf(sid) === -1) continue;
+    // إضافة السجلات الجديدة
+    let maxId = state.records.reduce(function(m, r) { return Math.max(m, r.id || 0); }, 0);
+    
+    for (const entry of Object.entries(selections)) {
+        const sid = parseInt(entry[0]);
+        if (classStudents.indexOf(sid) === -1) continue;
 
-            const value = entry[1];
-            // دعم النوعين: نص بسيط أو كائن {status, period, minutes}
-            let status, period = null, minutes = null;
+        const value = entry[1];
+        let status, period = null, minutes = null;
 
-            if (typeof value === "string") {
-                status = value;
-            } else if (value && typeof value === "object") {
-                status = value.status;
-                period = value.period || null;
-                minutes = value.minutes || null;
-            } else {
-                continue;
-            }
-
-            maxId++;
-            state.records.push({
-                id: maxId,
-                student_id: sid,
-                date: date,
-                status: status,
-                period: period,
-                minutes: minutes,
-                note: ""
-            });
+        // التعامل مع النوعين
+        if (typeof value === "string" && value) {
+            status = value;
+        } else if (value && typeof value === "object" && value.status) {
+            status = value.status;
+            period = value.period || null;
+            minutes = value.minutes || null;
+        } else {
+            continue;  // تجاهل القيم الفارغة
         }
-        return true;
-    },
+
+        maxId++;
+        state.records.push({
+            id: maxId,
+            student_id: sid,
+            date: date,
+            status: status,
+            period: period,
+            minutes: minutes,
+            note: ""
+        });
+    }
+    return true;
+},
 
     // حذف سجل واحد
     deleteRecord: function(state, recordId) {
