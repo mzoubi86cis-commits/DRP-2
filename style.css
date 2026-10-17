@@ -1,5 +1,5 @@
 /* ==========================================================================
-   style.css - أنماط نظام BTEC
+   style.css - نظام BTEC (النسخة النهائية)
    ========================================================================== */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -198,7 +198,7 @@ nav button.hidden { display: none; }
 }
 
 /* ==========================================================================
-   البطاقات الإحصائية - صف واحد
+   البطاقات الإحصائية
    ========================================================================== */
 .stats-cards {
     display: grid;
@@ -313,7 +313,6 @@ nav button.hidden { display: none; }
     overflow-x: auto;
     display: block;
 }
-
 .table-wrap table {
     width: 100%;
     min-width: 100%;
@@ -321,13 +320,11 @@ nav button.hidden { display: none; }
     table-layout: auto;
     display: table;
 }
-
 table {
     width: 100%;
     border-collapse: collapse;
     min-width: 100%;
 }
-
 th {
     background: var(--primary-light);
     color: white;
@@ -338,7 +335,6 @@ th {
     white-space: nowrap;
     vertical-align: middle;
 }
-
 td {
     padding: 12px;
     border-bottom: 1px solid var(--border);
@@ -346,24 +342,10 @@ td {
     font-size: 0.92em;
     vertical-align: middle;
 }
-
 tbody tr:hover { background: #f8f9fa; }
-
-td:first-child,
-td:nth-child(2) {
-    text-align: right;
-}
-
-td:nth-child(2) {
-    font-weight: 500;
-    min-width: 180px;
-}
-
-td:last-child {
-    text-align: center;
-    min-width: 140px;
-    white-space: nowrap;
-}
+td:first-child, td:nth-child(2) { text-align: right; }
+td:nth-child(2) { font-weight: 500; min-width: 180px; }
+td:last-child { text-align: center; min-width: 140px; white-space: nowrap; }
 
 .student-link {
     color: var(--primary-light);
@@ -399,7 +381,7 @@ tr.row-red { border-right: 5px solid var(--red); background: #ffe6e6; }
 .badge-admin { background: #ffe5b4; color: #b35900; }
 
 /* ==========================================================================
-   أزرار الحالة اليومية - أفقية دائماً
+   أزرار الحالة اليومية
    ========================================================================== */
 .status-group {
     display: inline-flex;
@@ -407,14 +389,11 @@ tr.row-red { border-right: 5px solid var(--red); background: #ffe6e6; }
     border-radius: 8px;
     border: 1px solid var(--border);
     background: #f8f9fa;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     padding: 3px;
-    overflow-x: auto;
-    max-width: 100%;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    align-items: center;
+    justify-content: center;
 }
-.status-group::-webkit-scrollbar { display: none; }
 
 .status-btn {
     padding: 7px 12px;
@@ -681,13 +660,11 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     from { transform: scale(0.9); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
-
 .period-modal-content h3 {
     color: var(--primary-light);
     margin-bottom: 8px;
     font-size: 1.15em;
 }
-
 .modal-section { margin: 15px 0; }
 .modal-section label {
     display: block;
@@ -696,16 +673,12 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     color: #333;
     font-size: 0.95em;
 }
-
-.period-buttons,
-.minutes-buttons {
+.period-buttons, .minutes-buttons {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
-
-.period-btn,
-.minutes-btn {
+.period-btn, .minutes-btn {
     min-width: 50px;
     height: 50px;
     border: 2px solid var(--border);
@@ -718,27 +691,22 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     color: #555;
     transition: all 0.15s;
 }
-.period-btn:hover,
-.minutes-btn:hover {
+.period-btn:hover, .minutes-btn:hover {
     border-color: var(--primary-light);
     background: #e9ecef;
 }
-
-.period-btn.selected,
-.minutes-btn.selected {
+.period-btn.selected, .minutes-btn.selected {
     background: var(--primary-light);
     color: white;
     border-color: var(--primary-light);
     transform: scale(1.05);
     box-shadow: 0 3px 10px rgba(42,82,152,0.3);
 }
-
 .period-modal.escape-mode .period-btn.selected {
     background: var(--orange);
     border-color: var(--orange);
     box-shadow: 0 3px 10px rgba(253,126,20,0.3);
 }
-
 .period-modal.late-mode .period-btn.selected,
 .period-modal.late-mode .minutes-btn.selected {
     background: #d39e00;
@@ -751,39 +719,12 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
    الطباعة
    ========================================================================== */
 @media print {
-    @page {
-        size: A4 portrait;
-        margin: 8mm 10mm;
-    }
-    
-    html, body {
-        width: 100%;
-        height: auto !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: white !important;
-    }
-    
+    @page { size: A4 portrait; margin: 8mm 10mm; }
+    html, body { width: 100%; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: white !important; }
     body * { visibility: hidden; }
     .warning-paper, .warning-paper * { visibility: visible; }
-    
-    .warning-modal {
-        position: static !important;
-        inset: auto !important;
-        background: white !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        display: block !important;
-        overflow: visible !important;
-        min-height: 0 !important;
-        height: auto !important;
-    }
-    
-    header, nav, footer, main, .page, #loginScreen, #mainApp {
-        display: none !important;
-    }
-    
+    .warning-modal { position: static !important; inset: auto !important; background: white !important; padding: 0 !important; margin: 0 !important; display: block !important; overflow: visible !important; min-height: 0 !important; height: auto !important; }
+    header, nav, footer, main, .page, #loginScreen, #mainApp { display: none !important; }
     .warning-paper {
         position: static !important;
         margin: 0 auto !important;
@@ -797,7 +738,6 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
         page-break-after: avoid !important;
         page-break-inside: avoid !important;
     }
-    
     .warning-paper .letterhead { padding-bottom: 6px !important; margin-bottom: 10px !important; }
     .warning-paper .letterhead .school-name { font-size: 15pt; margin-bottom: 2px; }
     .warning-paper .letterhead .school-info { font-size: 8.5pt; }
@@ -830,7 +770,6 @@ html, body {
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
 }
-
 * { touch-action: manipulation; }
 
 @media (max-width: 1200px) {
@@ -845,58 +784,25 @@ html, body {
     .card h3 { font-size: 0.7em; }
     .card .num { font-size: 1.3em; }
     .card { min-height: 65px; padding: 10px 6px; }
-    
-    .btn {
-        min-height: 40px;
-        padding: 10px 14px;
-        font-size: 0.9em;
-    }
+    .btn { min-height: 40px; padding: 10px 14px; font-size: 0.9em; }
     .btn-small { min-height: 34px; padding: 6px 10px; font-size: 0.8em; }
-    
-    input, select, textarea {
-        min-height: 42px;
-        font-size: 16px !important;
-        padding: 8px 10px;
-    }
-    
+    input, select, textarea { min-height: 42px; font-size: 16px !important; padding: 8px 10px; }
     .nav-btn { min-height: 42px; padding: 10px 14px; font-size: 0.88em; }
-    
-    .daily-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
+    .daily-controls { flex-direction: column; align-items: stretch; }
     .daily-controls label { display: flex; flex-direction: column; }
     .daily-controls input { width: 100%; }
     .daily-controls .btn { width: 100%; }
-    
-    .header-top {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
+    .header-top { flex-direction: column; align-items: stretch; gap: 10px; }
     .user-info { display: flex; justify-content: space-between; align-items: center; }
-    
-    nav {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding-bottom: 5px;
-        scrollbar-width: none;
-    }
+    nav { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; scrollbar-width: none; }
     nav::-webkit-scrollbar { display: none; }
     nav button { flex-shrink: 0; }
-    
-    .class-selector {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        scrollbar-width: none;
-    }
+    .class-selector { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
     .class-selector::-webkit-scrollbar { display: none; }
     .class-tab { flex-shrink: 0; }
-    
     .warning-paper { padding: 20px 15px; }
     .signatures { grid-template-columns: 1fr; gap: 20px; }
     
-    /* ✅ أزرار الحالة - أفقية مع تمرير */
     .status-group {
         display: flex;
         flex-wrap: nowrap;
@@ -905,44 +811,25 @@ html, body {
         padding: 3px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
+        justify-content: flex-start;
     }
     .status-group::-webkit-scrollbar { display: none; }
-    
-    .status-btn {
-        flex-shrink: 0;
-        font-size: 0.78em;
-        padding: 8px 10px;
-        white-space: nowrap;
-        min-height: 38px;
-    }
-    
+    .status-btn { flex-shrink: 0; font-size: 0.78em; padding: 8px 10px; white-space: nowrap; min-height: 38px; }
     table { font-size: 0.85em; }
     th, td { padding: 8px 6px; }
-    
     td:last-child { white-space: nowrap; }
-    
-    .period-btn,
-    .minutes-btn {
-        min-width: 45px;
-        height: 45px;
-        font-size: 1rem;
-    }
+    .period-btn, .minutes-btn { min-width: 45px; height: 45px; font-size: 1rem; }
 }
 
 @media (max-width: 600px) {
     .stats-cards { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 380px) {
     header h1 { font-size: 1em; }
     .container { padding: 12px; }
 }
 
-/* شريط تمرير أنيق */
-.table-wrap {
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-}
+.table-wrap { -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 .table-wrap::-webkit-scrollbar { height: 8px; }
 .table-wrap::-webkit-scrollbar-track { background: #f0f2f5; }
 .table-wrap::-webkit-scrollbar-thumb { background: #2a5298; border-radius: 4px; }
@@ -964,27 +851,15 @@ html, body {
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 #splashScreen.hidden { opacity: 0; visibility: hidden; }
-#splashScreen .splash-logo {
-    font-size: 5em;
-    margin-bottom: 20px;
-    animation: pulse 1.5s ease-in-out infinite;
-}
+#splashScreen .splash-logo { font-size: 5em; margin-bottom: 20px; animation: pulse 1.5s ease-in-out infinite; }
 #splashScreen h2 { font-size: 1.3em; margin-bottom: 8px; }
 #splashScreen p { font-size: 0.9em; opacity: 0.85; }
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-/* حالة الضغط على الأزرار */
-.btn:active,
-.nav-btn:active,
-.status-btn:active,
-.class-tab:active {
+.btn:active, .nav-btn:active, .status-btn:active, .class-tab:active {
     transform: scale(0.97);
     opacity: 0.9;
 }
-
 .btn, .nav-btn, .status-btn, .class-tab {
     -webkit-user-select: none;
     user-select: none;
