@@ -1,5 +1,5 @@
 /* ==========================================================================
-   config.js - البيانات الثابتة والإعدادات
+   config.js - الإعدادات العامة
    ========================================================================== */
 
 // ===== بيانات المدرسة =====
@@ -11,17 +11,17 @@ const SCHOOL_INFO = {
     principal: "د. طارق جيت"
 };
 
-// ===== الصفوف والتخصصات =====
+// ===== الصفوف =====
 const CLASSES = [
-    { id: "IT10", name: "تكنولوجيا المعلومات - عاشر",            short: "IT - عاشر",   teacher: "أ. منذر الزعبي",  quality: "أ. يزن الخطيب" },
-    { id: "IT11", name: "تكنولوجيا المعلومات - أول ثانوي",       short: "IT - أول ثانوي", teacher: "أ. منذر الزعبي",  quality: "أ. يزن الخطيب" },
-    { id: "IT12", name: "تكنولوجيا المعلومات - ثاني ثانوي",      short: "IT - ثاني ثانوي", teacher: "أ. منذر الزعبي",  quality: "أ. يزن الخطيب" },
-    { id: "BM10", name: "إدارة الأعمال - عاشر",                  short: "BM - عاشر",   teacher: "أ. يزن الخطيب",   quality: "أ. منذر الزعبي" },
-    { id: "BM11", name: "إدارة الأعمال - أول ثانوي",             short: "BM - أول ثانوي", teacher: "أ. يزن الخطيب",   quality: "أ. منذر الزعبي" },
-    { id: "BM12", name: "إدارة الأعمال - ثاني ثانوي",            short: "BM - ثاني ثانوي", teacher: "أ. يزن الخطيب",   quality: "أ. منذر الزعبي" }
+    { id: "IT10", name: "تكنولوجيا المعلومات - عاشر",     short: "IT - عاشر",   teacher: "أ. منذر الزعبي", quality: "أ. يزن الخطيب" },
+    { id: "IT11", name: "تكنولوجيا المعلومات - أول ثانوي", short: "IT - أول",   teacher: "أ. منذر الزعبي", quality: "أ. يزن الخطيب" },
+    { id: "IT12", name: "تكنولوجيا المعلومات - ثاني ثانوي", short: "IT - ثاني",  teacher: "أ. منذر الزعبي", quality: "أ. يزن الخطيب" },
+    { id: "BM10", name: "إدارة الأعمال - عاشر",              short: "BM - عاشر",   teacher: "أ. يزن الخطيب",  quality: "أ. منذر الزعبي" },
+    { id: "BM11", name: "إدارة الأعمال - أول ثانوي",         short: "BM - أول",   teacher: "أ. يزن الخطيب",  quality: "أ. منذر الزعبي" },
+    { id: "BM12", name: "إدارة الأعمال - ثاني ثانوي",        short: "BM - ثاني",  teacher: "أ. يزن الخطيب",  quality: "أ. منذر الزعبي" }
 ];
 
-// ===== المستخدمون الافتراضيون =====
+// ===== المستخدمون =====
 const DEFAULT_USERS = {
     "admin": { password: "admin-2026", name: "د. طارق جيت", role: "admin", classId: null },
     "it10":  { password: "it10-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT10" },
@@ -33,62 +33,43 @@ const DEFAULT_USERS = {
 };
 
 // ===== حدود التنبيهات =====
-const WARNING_THRESHOLD = 5;   // تنبيه أصفر
-const ORANGE_THRESHOLD = 25;   // إنذار برتقالي
-const RED_THRESHOLD = 35;      // إنذار أحمر
+const WARNING_THRESHOLD = 5;
+const ORANGE_THRESHOLD = 25;
+const RED_THRESHOLD = 35;
 
-// ===== إعدادات JSONBin =====
+// ===== إعدادات السحابة =====
 const CLOUD_CONFIG = {
     API_URL: "https://api.jsonbin.io/v3/b",
     STORAGE_KEY: "btec_settings",
     SESSION_KEY: "btec_session"
 };
 
-// ===== أنواع السجلات =====
+// ===== الحالات =====
 const STATUS = {
-    PRESENT: "present",    // حاضر
-    ABSENT: "absent",      // غائب
-    EXCUSED: "excused",    // بعذر
-    ESCAPE: "escape",      // هروب
-    LATE: "late"           // تأخير
+    PRESENT: "present",  // حاضر (افتراضي)
+    ABSENT:  "absent",   // غائب (يُحسب في التنبيهات)
+    EXCUSED: "excused",  // بعذر (لا يُحسب)
+    ESCAPE:  "escape",   // هروب (للإحصائيات فقط)
+    LATE:    "late"      // تأخير (للإحصائيات فقط)
 };
 
-// ===== عدد الحصص اليومية =====
+// ===== حدود الحصص =====
 const PERIODS_COUNT = 7;
-
-// ===== خيارات دقائق التأخير =====
 const LATE_MINUTES_OPTIONS = [5, 10, 15, 20, 30, 45];
 
-// ===== إعدادات احتساب التنبيهات =====
+// ===== إعدادات الاحتساب =====
+// الهروب والتأخير: لا يُحسبان في التنبيهات ولا الإنذارات
 const COUNT_IN_ALERTS = {
-    ESCAPE: true,    // الهروب يُحسب في التنبيهات
-    LATE: false      // التأخير لا يُحسب في التنبيهات
+    ESCAPE: false,
+    LATE: false
 };
 
-// ===== إعدادات احتساب الإنذارات =====
 const COUNT_IN_WARNINGS = {
-    ESCAPE: true,    // الهروب يُحسب في الإنذار
-    LATE: false      // التأخير لا يُحسب في الإنذار
+    ESCAPE: false,
+    LATE: false
 };
 
-// ===== الأسماء العربية للأنواع =====
-const STATUS_NAMES = {
-    present: "حاضر",
-    absent: "غائب",
-    excused: "بعذر",
-    escape: "هروب",
-    late: "تأخير"
-};
-
-const STATUS_ICONS = {
-    present: "✅",
-    absent: "❌",
-    excused: "📝",
-    escape: "🏃",
-    late: "⏰"
-};
-
-// ===== أدوات مساعدة عامة =====
+// ===== أدوات =====
 function getStatusColor(total) {
     if (total >= RED_THRESHOLD) return "red";
     if (total >= ORANGE_THRESHOLD) return "orange";
