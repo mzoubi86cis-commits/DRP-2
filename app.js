@@ -1,8 +1,7 @@
 /* ==========================================================================
-   app.js - المنطق الرئيسي
+   app.js - المنطق الرئيسي (النسخة النهائية المصححة)
    ========================================================================== */
 
-// ===== حالة التطبيق =====
 const State = {
     students: [],
     records: [],
@@ -15,7 +14,6 @@ const State = {
     autoSaveTimer: null
 };
 
-// ===== الحفظ التلقائي =====
 function autoSave(delay) {
     delay = delay || 800;
     if (State.autoSaveTimer) clearTimeout(State.autoSaveTimer);
@@ -43,7 +41,6 @@ function updateSyncStatus(status, text) {
     el.textContent = text;
 }
 
-// ===== المزامنة =====
 async function syncFromCloud() {
     if (!confirm("سيتم استبدال البيانات المحلية بالبيانات السحابية. متابعة؟")) return;
     updateSyncStatus("syncing", "⏳ جارٍ التحميل...");
@@ -107,7 +104,6 @@ async function loadData() {
     }
 }
 
-// ===== التنقل =====
 function navigate(page) {
     document.querySelectorAll(".page").forEach(function(p) { p.classList.remove("active"); });
     const target = document.getElementById("page-" + page);
@@ -124,7 +120,6 @@ function navigate(page) {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ===== محدد الصفوف =====
 function renderClassSelector() {
     const container = document.getElementById("classSelector");
     if (!container) return;
@@ -147,7 +142,6 @@ function selectClass(classId) {
     renderDailyTable();
 }
 
-// ===== الإحصائيات =====
 function renderStats() {
     if (!State.currentClassId) {
         document.getElementById("statsCards").innerHTML = '<div class="alert alert-info">اختر صفاً</div>';
@@ -178,7 +172,6 @@ function renderStats() {
         '<div class="card red"><h3>🔴 أحمر</h3><span class="num">' + counts.red + '</span></div>';
 }
 
-// ===== جدول الطلاب =====
 function renderStudentsTable() {
     const tbody = document.getElementById("studentsTable");
     if (!tbody) return;
@@ -221,14 +214,7 @@ function renderStudentsTable() {
     });
 }
 
-// ==========================================================================
-//   التسجيل اليومي - التصميم الجديد
-// ==========================================================================
-//   • الطالب حاضر تلقائياً (افتراضي)
-//   • المعلم يحدد فقط الغائبين / المعذورين
-//   • الهروب والتأخير اختياريان (للإحصائيات فقط)
-// ==========================================================================
-
+// ===== التسجيل اليومي =====
 function renderDailyTable() {
     const tbody = document.getElementById("dailyTable");
     if (!tbody) return;
@@ -243,7 +229,7 @@ function renderDailyTable() {
     const students = Students.getByClass(State, State.currentClassId);
     const classStudentIds = students.map(function(s) { return s.id; });
 
-    // جلب السجلات الموجودة مسبقاً
+    // جلب السجلات المحفوظة مسبقاً
     const existing = {};
     State.records.filter(function(r) {
         return r.date === State.dailyDate && classStudentIds.indexOf(r.student_id) !== -1;
@@ -257,7 +243,7 @@ function renderDailyTable() {
 
     students.sort(function(a, b) { return a.id - b.id; }).forEach(function(s) {
         const rec = existing[s.id];
-        let status = "present";  // ✅ الافتراضي: حاضر
+        let status = "present";
         let escapes = [];
         let lates = [];
 
@@ -267,14 +253,8 @@ function renderDailyTable() {
             lates = rec.lates || [];
         }
 
-        // حفظ الحالة في الذاكرة
-        State.dailySelections[s.id] = {
-            status: status,
-            escapes: escapes,
-            lates: lates
-        };
+        State.dailySelections[s.id] = { status: status, escapes: escapes, lates: lates };
 
-        // بناء نص الأزرار
         let escapeLabel = "🏃 هروب";
         if (escapes.length > 0) {
             escapeLabel = "🏃 هروب (" + escapes.map(function(e) { return "ح" + e.period; }).join("،") + ")";
@@ -286,8 +266,6 @@ function renderDailyTable() {
         }
 
         const tr = document.createElement("tr");
-        tr.className = "row-" + getStatusColor(status === "absent" ? 1 : 0);
-        if (status === "present") tr.className = "";
         tr.innerHTML =
             '<td>' + s.id + '</td>' +
             '<td>' + s.nameAr + '</td>' +
@@ -305,7 +283,6 @@ function renderDailyTable() {
     updateDailyCounters();
 }
 
-// تعيين حالة أساسية (حاضر / غائب / بعذر)
 function setDailyStatus(sid, status) {
     if (!State.dailySelections[sid]) {
         State.dailySelections[sid] = { status: status, escapes: [], lates: [] };
@@ -316,7 +293,6 @@ function setDailyStatus(sid, status) {
     updateDailyCounters();
 }
 
-// تحديث أزرار صف معين
 function refreshRowButtons(sid) {
     const group = document.querySelector('.status-group[data-sid="' + sid + '"]');
     if (!group) return;
@@ -347,33 +323,23 @@ function refreshRowButtons(sid) {
     }
 }
 
-// تحديث العدادات
 function updateDailyCounters() {
-    let p = 0, a = 0, e = 0;
-    let escapeTotal = 0, lateTotal = 0;
-
+    let p = 0, a = 0, e = 0, esc = 0, late = 0;
     Object.values(State.dailySelections).forEach(function(d) {
         if (d.status === "present") p++;
         else if (d.status === "absent") a++;
         else if (d.status === "excused") e++;
-        
-        if (d.escapes && d.escapes.length) escapeTotal += d.escapes.length;
-        if (d.lates && d.lates.length) lateTotal += d.lates.length;
+        if (d.escapes) esc += d.escapes.length;
+        if (d.lates) late += d.lates.length;
     });
-
-    const students = Students.getByClass(State, State.currentClassId);
 
     document.getElementById("cPresent").textContent = p;
     document.getElementById("cAbsent").textContent = a;
     document.getElementById("cExcused").textContent = e;
-    
-    const elEsc = document.getElementById("cEscape");
-    const elLate = document.getElementById("cLate");
-    if (elEsc) elEsc.textContent = escapeTotal;
-    if (elLate) elLate.textContent = lateTotal;
+    document.getElementById("cEscape").textContent = esc;
+    document.getElementById("cLate").textContent = late;
 }
 
-// تحديد الكل
 function markAll(status) {
     const students = Students.getByClass(State, State.currentClassId);
     students.forEach(function(s) {
@@ -410,24 +376,19 @@ function changeDay(delta) {
     renderDailyTable();
 }
 
-// حفظ التسجيل اليومي
 async function saveDailyRecord() {
     if (!State.currentClassId) { alert("اختر صفاً أولاً"); return; }
-
     const students = Students.getByClass(State, State.currentClassId);
-    if (students.length === 0) {
-        alert("لا يوجد طلاب في هذا الصف");
-        return;
-    }
+    if (students.length === 0) { alert("لا يوجد طلاب"); return; }
 
-    // ضمان وجود حالة لكل طالب
+    // التأكد من وجود حالة لكل طالب
     students.forEach(function(s) {
         if (!State.dailySelections[s.id]) {
             State.dailySelections[s.id] = { status: "present", escapes: [], lates: [] };
         }
     });
 
-    // حفظ
+    // الحفظ
     Attendance.saveDay(State, State.currentClassId, State.dailyDate, State.dailySelections);
 
     updateSyncStatus("syncing", "⏳ جارٍ الحفظ...");
@@ -442,30 +403,29 @@ async function saveDailyRecord() {
 let periodModalState = {
     studentId: null,
     mode: null,
-    selectedPeriods: [],
-    selectedMinutes: {}
+    periods: [],    // {period, minutes}
 };
 
 function openPeriodModal(sid, mode) {
     const s = State.students.find(function(x) { return x.id === sid; });
     if (!s) return;
 
-    // الحالات الحالية
     const current = State.dailySelections[sid] || { status: "present", escapes: [], lates: [] };
     
     periodModalState = {
         studentId: sid,
         mode: mode,
-        selectedPeriods: mode === "escape"
-            ? (current.escapes || []).map(function(e) { return e.period; })
-            : (current.lates || []).map(function(l) { return l.period; }),
-        selectedMinutes: {}
+        periods: []
     };
 
-    // للـ lates، نحفظ الدقائق لكل حصة
-    if (mode === "late") {
-        (current.lates || []).forEach(function(l) {
-            periodModalState.selectedMinutes[l.period] = l.minutes;
+    // تحميل القيم الحالية
+    if (mode === "escape") {
+        periodModalState.periods = (current.escapes || []).map(function(e) {
+            return { period: e.period, minutes: null };
+        });
+    } else {
+        periodModalState.periods = (current.lates || []).map(function(l) {
+            return { period: l.period, minutes: l.minutes };
         });
     }
 
@@ -488,17 +448,14 @@ function openPeriodModal(sid, mode) {
 
     studentInfo.textContent = "الطالب: " + s.nameAr;
 
-    document.querySelectorAll(".period-btn").forEach(function(b) {
-        b.classList.remove("selected");
-    });
-    document.querySelectorAll(".minutes-btn").forEach(function(b) {
-        b.classList.remove("selected");
-    });
+    // إعادة تعيين الأزرار
+    document.querySelectorAll(".period-btn").forEach(function(b) { b.classList.remove("selected"); });
+    document.querySelectorAll(".minutes-btn").forEach(function(b) { b.classList.remove("selected"); });
 
-    // إعادة التحديد للحصص المحفوظة
-    periodModalState.selectedPeriods.forEach(function(p) {
+    // تحديد الحصص المحفوظة
+    periodModalState.periods.forEach(function(p) {
         document.querySelectorAll(".period-btn").forEach(function(b) {
-            if (parseInt(b.textContent) === p) b.classList.add("selected");
+            if (parseInt(b.textContent) === p.period) b.classList.add("selected");
         });
     });
 
@@ -506,22 +463,26 @@ function openPeriodModal(sid, mode) {
 }
 
 function selectPeriod(p) {
-    const idx = periodModalState.selectedPeriods.indexOf(p);
+    const idx = periodModalState.periods.findIndex(function(x) { return x.period === p; });
     if (idx === -1) {
-        periodModalState.selectedPeriods.push(p);
+        // إضافة حصة جديدة
+        periodModalState.periods.push({ period: p, minutes: null });
     } else {
-        periodModalState.selectedPeriods.splice(idx, 1);
+        // إزالة
+        periodModalState.periods.splice(idx, 1);
     }
+
     document.querySelectorAll(".period-btn").forEach(function(b) {
         const val = parseInt(b.textContent);
-        b.classList.toggle("selected", periodModalState.selectedPeriods.indexOf(val) !== -1);
+        const isSelected = periodModalState.periods.some(function(x) { return x.period === val; });
+        b.classList.toggle("selected", isSelected);
     });
 }
 
 function selectMinutes(m) {
-    // نطبق الدقائق على جميع الحصص المحددة
-    periodModalState.selectedPeriods.forEach(function(p) {
-        periodModalState.selectedMinutes[p] = m;
+    // تطبيق الدقائق على جميع الحصص المحددة
+    periodModalState.periods.forEach(function(p) {
+        p.minutes = m;
     });
     document.querySelectorAll(".minutes-btn").forEach(function(b) {
         const val = b.textContent.replace("+", "");
@@ -530,16 +491,14 @@ function selectMinutes(m) {
 }
 
 function confirmPeriodSelection() {
-    if (periodModalState.selectedPeriods.length === 0) {
+    if (periodModalState.periods.length === 0) {
         alert("⚠️ يجب تحديد حصة واحدة على الأقل");
         return;
     }
-
     if (periodModalState.mode === "late") {
-        // التحقق من الدقائق لكل حصة
-        for (const p of periodModalState.selectedPeriods) {
-            if (!periodModalState.selectedMinutes[p]) {
-                alert("⚠️ يجب تحديد دقائق التأخير للحصة " + p);
+        for (const p of periodModalState.periods) {
+            if (!p.minutes) {
+                alert("⚠️ يجب تحديد الدقائق للحصة " + p.period);
                 return;
             }
         }
@@ -552,12 +511,12 @@ function confirmPeriodSelection() {
     }
 
     if (periodModalState.mode === "escape") {
-        State.dailySelections[sid].escapes = periodModalState.selectedPeriods.map(function(p) {
-            return { period: p };
+        State.dailySelections[sid].escapes = periodModalState.periods.map(function(p) {
+            return { period: p.period };
         });
     } else {
-        State.dailySelections[sid].lates = periodModalState.selectedPeriods.map(function(p) {
-            return { period: p, minutes: periodModalState.selectedMinutes[p] };
+        State.dailySelections[sid].lates = periodModalState.periods.map(function(p) {
+            return { period: p.period, minutes: p.minutes };
         });
     }
 
@@ -573,7 +532,7 @@ function cancelPeriodSelection() {
 function closePeriodModal() {
     const modal = document.getElementById("periodModal");
     if (modal) modal.classList.remove("show", "escape-mode", "late-mode");
-    periodModalState = { studentId: null, mode: null, selectedPeriods: [], selectedMinutes: {} };
+    periodModalState = { studentId: null, mode: null, periods: [] };
 }
 
 // ===== صفحة الطالب =====
@@ -653,7 +612,6 @@ async function deleteRecord(rid, sid) {
     if (ok) openStudent(sid);
 }
 
-// ===== التقارير =====
 function renderReports() {
     const start = document.getElementById("repStart").value;
     const end = document.getElementById("repEnd").value;
@@ -700,7 +658,6 @@ function exportReportCSV() {
     Reports.exportCSV(State.reportsCache.rows, classInfo.short, State.reportsCache.start, State.reportsCache.end);
 }
 
-// ===== التنبيهات =====
 function renderAlerts() {
     if (!State.currentClassId) {
         document.getElementById("alertsList").innerHTML = '<div class="alert alert-warning">اختر صفاً</div>';
@@ -729,11 +686,10 @@ function renderAlerts() {
             '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; align-items:center;">' +
             '<div><strong>' + s.nameAr + '</strong><div style="font-size:0.85em; color:#666;">' + s.number + '</div><div style="margin-top:6px;">' + msg + '</div></div>' +
             '<div style="text-align:center;"><div style="font-size:2em; font-weight:700;">' + total + '</div><div style="font-size:0.85em;">أيام غياب</div>' +
-            '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn btn-small btn-info" onclick="openStudent(' + s.id + ')">📋 التفاصيل</button><button class="btn btn-small btn-warning" onclick="showWarning(' + s.id + ')">📨 إنذار</button></div></div></div></div>';
+            '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn btn-small btn-info" onclick="openStudent(' + s.id + ')">📋</button><button class="btn btn-small btn-warning" onclick="showWarning(' + s.id + ')">📨 إنذار</button></div></div></div></div>';
     }).join("");
 }
 
-// ===== إدارة الطلاب =====
 function renderAdminStudents() {
     const select = document.getElementById("adminClassSelect");
     if (!select) return;
@@ -822,7 +778,6 @@ function importFromExcel() {
     });
 }
 
-// ===== إدارة المستخدمين =====
 function renderAdminUsers() {
     const select = document.getElementById("newClassId");
     if (select && !select.innerHTML.trim()) {
@@ -892,7 +847,6 @@ function removeUser(username) {
     else alert(result.msg);
 }
 
-// ===== الإنذار الرسمي =====
 function showWarning(sid) {
     const s = State.students.find(function(x) { return x.id === sid; });
     if (!s) return;
@@ -920,31 +874,21 @@ function showWarning(sid) {
             "<p>نلفت عنايتكم إلى أن الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، قد تجاوز عدد أيام غيابه الحد المسموح، حيث بلغ <span class=\"number-badge\">" + total + " أيام</span>، وهي " + numberToArabicWords(total) + ".</p>" +
             detailsHTML +
             "<p>وحرصًا منا على مصلحة الطالب، نرجو متابعة ابنكم وحثّه على الالتزام بالدوام.</p>";
-        rec = "<h4>📋 التوصيات:</h4><ul>" +
-            "<li>متابعة دوام ابنكم اليومي.</li>" +
-            "<li>التواصل مع مربي الصف.</li>" +
-            "<li>حثّ الطالب على الالتزام بالدوام.</li></ul>";
+        rec = "<h4>📋 التوصيات:</h4><ul><li>متابعة دوام ابنكم اليومي.</li><li>التواصل مع مربي الصف.</li><li>حثّ الطالب على الالتزام بالدوام.</li></ul>";
     } else if (level === 2) {
         titleText = "⚠️ إنذار ثانٍ بغياب الطالب"; titleClass = "level-2";
         body = "<p>تحية طيبة وبعد،</p>" +
             "<p>بالإشارة إلى الإنذار الأول، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في الغياب، نلفت عنايتكم إلى أن عدد أيام غيابه بلغ <span class=\"number-badge\">" + total + " يومًا</span>.</p>" +
             detailsHTML +
             "<p>نرجو سرعة التواصل مع إدارة المدرسة خلال <strong>ثلاثة أيام</strong>.</p>";
-        rec = "<h4>⚠️ التوصيات العاجلة:</h4><ul>" +
-            "<li>الحضور إلى المدرسة للاجتماع مع المربي والإدارة.</li>" +
-            "<li>تقديم الأعذار الرسمية إن وُجدت.</li>" +
-            "<li>المتابعة اليومية لدوام الطالب.</li></ul>";
+        rec = "<h4>⚠️ التوصيات العاجلة:</h4><ul><li>الحضور إلى المدرسة للاجتماع مع المربي والإدارة.</li><li>تقديم الأعذار الرسمية إن وُجدت.</li><li>المتابعة اليومية لدوام الطالب.</li></ul>";
     } else {
         titleText = "🚨 إنذار نهائي بغياب الطالب"; titleClass = "level-3";
         body = "<p>تحية طيبة وبعد،</p>" +
             "<p>بعد استنفاد الإنذارات السابقة، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في التغيب، نلفت عنايتكم إلى أن عدد أيام غيابه بلغ <span class=\"number-badge\">" + total + " يومًا</span>، وهو تجاوز جسيم للتعليمات.</p>" +
             detailsHTML +
             "<p>لذا نُرسل إليكم <strong style=\"color:#dc3545;\">الإنذار النهائي</strong>، وفي حال استمرار الغياب سنضطر لرفع الأمر إلى مديرية التربية.</p>";
-        rec = "<h4>🚨 إجراءات عاجلة:</h4><ul>" +
-            "<li><strong>الحضور الفوري للمدرسة</strong> خلال يومين.</li>" +
-            "<li>تقديم الأعذار الرسمية مصدّقة.</li>" +
-            "<li>التوقيع على تعهد خطي.</li>" +
-            "<li>في حال عدم الاستجابة: رفع الأمر لمديرية التربية.</li></ul>";
+        rec = "<h4>🚨 إجراءات عاجلة:</h4><ul><li><strong>الحضور الفوري للمدرسة</strong> خلال يومين.</li><li>تقديم الأعذار الرسمية مصدّقة.</li><li>التوقيع على تعهد خطي.</li><li>في حال عدم الاستجابة: رفع الأمر لمديرية التربية.</li></ul>";
     }
 
     const html =
@@ -973,7 +917,6 @@ function showWarning(sid) {
 
 function closeWarning() { document.getElementById("warningModal").classList.remove("show"); }
 
-// ===== النسخ الاحتياطي =====
 function exportBackup() {
     const data = {
         version: 3,
@@ -1011,7 +954,6 @@ async function importBackup() {
     reader.readAsText(file);
 }
 
-// ===== التحديث الكامل =====
 function renderAll() {
     renderClassSelector();
     renderStats();
@@ -1022,7 +964,6 @@ function renderAll() {
     if (badge) badge.textContent = "📅 اليوم: " + todayISO();
 }
 
-// ===== نظام الدخول =====
 (function() {
     "use strict";
     const safeStorage = {
@@ -1174,7 +1115,6 @@ function renderAll() {
     else init();
 })();
 
-// ===== بدء التشغيل =====
 let appStarted = false;
 
 async function startApp() {
@@ -1208,8 +1148,6 @@ async function startApp() {
 }
 
 window.startApp = startApp;
-
-// ===== تصدير جميع الدوال =====
 window.resetCloudSettings = resetCloudSettings;
 window.openPeriodModal = openPeriodModal;
 window.selectPeriod = selectPeriod;
@@ -1240,13 +1178,12 @@ window.removeUser = removeUser;
 window.exportBackup = exportBackup;
 window.importBackup = importBackup;
 
-// ===== إعادة إعداد الاتصال السحابي =====
 function resetCloudSettings() {
     if (!State.currentUser || State.currentUser.role !== "admin") {
         alert("❌ للمدير فقط");
         return;
     }
-    if (!confirm("سيتم حذف إعدادات JSONBin من هذا الجهاز.\n\nبياناتك في السحابة لن تُحذف.\n\nمتابعة؟")) return;
+    if (!confirm("سيتم حذف إعدادات JSONBin.\n\nالبيانات في السحابة آمنة.\n\nمتابعة؟")) return;
     if (!confirm("تأكيد نهائي؟")) return;
     Cloud.clearSettings();
     try { localStorage.removeItem(CLOUD_CONFIG.SESSION_KEY); } catch(e) {}
