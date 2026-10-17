@@ -1,10 +1,9 @@
 /* ==========================================================================
-   reports.js - التقارير والإنذارات
+   reports.js - التقارير
    ========================================================================== */
 
 const Reports = {
 
-    // توليد تقرير لصف معين
     generate: function(state, classId, startDate, endDate, mode) {
         const students = Students.getByClass(state, classId);
 
@@ -15,8 +14,16 @@ const Reports = {
 
             const aD = recs.filter(function(r) { return r.status === STATUS.ABSENT; });
             const eD = recs.filter(function(r) { return r.status === STATUS.EXCUSED; });
-            const escD = recs.filter(function(r) { return r.status === STATUS.ESCAPE; });
-            const lateD = recs.filter(function(r) { return r.status === STATUS.LATE; });
+
+            // حساب الهروب والتأخير
+            let escapeHours = 0, lateHours = 0, lateMinutes = 0;
+            recs.forEach(function(r) {
+                if (r.escapes && Array.isArray(r.escapes)) escapeHours += r.escapes.length;
+                if (r.lates && Array.isArray(r.lates)) {
+                    lateHours += r.lates.length;
+                    r.lates.forEach(function(l) { lateMinutes += (l.minutes || 0); });
+                }
+            });
 
             let displayDates = [];
             let sortKey = 0;
@@ -25,8 +32,12 @@ const Reports = {
                 displayDates = recs.map(function(r) {
                     let label = "";
                     if (r.status === STATUS.EXCUSED) label = " (عذر)";
-                    else if (r.status === STATUS.ESCAPE) label = " (هروب ح" + (r.period || "?") + ")";
-                    else if (r.status === STATUS.LATE) label = " (تأخير " + (r.minutes || "?") + "د ح" + (r.period || "?") + ")";
+                    if (r.escapes && r.escapes.length > 0) {
+                        label += " [هروب: " + r.escapes.map(function(e) { return "ح" + e.period; }).join(",") + "]";
+                    }
+                    if (r.lates && r.lates.length > 0) {
+                        label += " [تأخير: " + r.lates.map(function(l) { return "ح" + l.period + "/" + l.minutes + "د"; }).join(",") + "]";
+                    }
                     return r.date + label;
                 }).sort();
                 sortKey = recs.length;
@@ -37,21 +48,30 @@ const Reports = {
                 displayDates = eD.map(function(r) { return r.date; }).sort();
                 sortKey = eD.length;
             } else if (mode === "escape") {
-                displayDates = escD.map(function(r) {
-                    return r.date + " (ح" + (r.period || "?") + ")";
-                }).sort();
-                sortKey = escD.length;
+                displayDates = [];
+                recs.forEach(function(r) {
+                    if (r.escapes && r.escapes.length > 0) {
+                        r.escapes.forEach(function(e) {
+                            displayDates.push(r.date + " (ح" + e.period + ")");
+                        });
+                    }
+                });
+                displayDates.sort();
+                sortKey = escapeHours;
             } else if (mode === "late") {
-                displayDates = lateD.map(function(r) {
-                    return r.date + " (" + (r.minutes || "?") + "د ح" + (r.period || "?") + ")";
-                }).sort();
-                sortKey = lateD.length;
+                displayDates = [];
+                recs.forEach(function(r) {
+                    if (r.lates && r.lates.length > 0) {
+                        r.lates.forEach(function(l) {
+                            displayDates.push(r.date + " (ح" + l.period + " - " + l.minutes + "د)");
+                        });
+                    }
+                });
+                displayDates.sort();
+                sortKey = lateHours;
             }
 
-            // حساب المجموع للتنبيهات
-            let alertTotal = aD.length;
-            if (COUNT_IN_ALERTS.ESCAPE) alertTotal += escD.length;
-            if (COUNT_IN_ALERTS.LATE)   alertTotal += lateD.length;
+            const alertTotal = aD.length;  // فقط الغياب بدون عذر
 
             return {
                 id: s.id,
@@ -60,8 +80,9 @@ const Reports = {
                 number: s.number,
                 absent: aD.length,
                 excused: eD.length,
-                escape: escD.length,
-                late: lateD.length,
+                escapeHours: escapeHours,
+                lateHours: lateHours,
+                lateMinutes: lateMinutes,
                 total: recs.length,
                 alertTotal: alertTotal,
                 displayDates: displayDates,
@@ -72,16 +93,14 @@ const Reports = {
         }).sort(function(a, b) { return b.sortKey - a.sortKey; });
     },
 
-    // تصدير CSV
     exportCSV: function(rows, className, startDate, endDate) {
         let csv = "\uFEFF";
-        csv += "الرقم,اسم الطالب,رقم الطالب,غائب,بعذر,هروب,تأخير,الإجمالي,الحالة,تواريخ الغياب\n";
+        csv += "الرقم,اسم الطالب,رقم الطالب,غياب,بعذر,حصص هروب,حصص تأخير,دقائق التأخير,الحالة\n";
 
         rows.forEach(function(r) {
-            const dStr = r.displayDates.join(" | ");
             csv += '"' + r.id + '","' + r.nameAr + '","' + r.number + '",' +
-                   r.absent + ',' + r.excused + ',' + r.escape + ',' + r.late + ',' +
-                   r.total + ',' + '"' + r.status + '","' + dStr + '"\n';
+                   r.absent + ',' + r.excused + ',' + r.escapeHours + ',' + r.lateHours + ',' + r.lateMinutes + ',' +
+                   '"' + r.status + '"\n';
         });
 
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
