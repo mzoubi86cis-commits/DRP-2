@@ -2,25 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>نظام الحضور والغياب - BTEC</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1e3c72">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
-<!-- شاشة البداية -->
-<div id="splashScreen">
-    <div class="splash-logo">🏫</div>
-    <h2>مدرسة الطرة الثانوية للبنين</h2>
-    <p>نظام الحضور والغياب - BTEC</p>
-</div>
-
-<!-- شاشة الدخول -->
 <div id="loginScreen">
     <div class="login-box">
         <span class="logo">🔐</span>
@@ -35,9 +25,7 @@
             <input type="text" id="binIdInput" placeholder="65f1a2b3..." autocomplete="off">
             <button id="setupBtn">💾 حفظ الإعدادات</button>
             <div class="login-error" id="setupError"></div>
-            <div class="login-hint">
-                💡 افتح <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> للحصول على المفاتيح.
-            </div>
+            <div class="login-hint">💡 افتح <a href="https://jsonbin.io" target="_blank">JSONBin.io</a> للحصول على المفاتيح.</div>
         </div>
 
         <div id="passwordStep" style="display: none;">
@@ -62,7 +50,6 @@
     </div>
 </div>
 
-<!-- التطبيق -->
 <div id="mainApp" style="display:none;">
 <header>
     <div class="container">
@@ -89,8 +76,6 @@
 </header>
 
 <main class="container">
-
-    <!-- الرئيسية -->
     <section id="page-home" class="page active">
         <div class="class-selector" id="classSelector"></div>
         <div class="stats-cards" id="statsCards"></div>
@@ -124,12 +109,8 @@
         </div>
     </section>
 
-    <!-- التسجيل اليومي -->
     <section id="page-daily" class="page">
         <h2 class="page-title">📝 التسجيل اليومي</h2>
-        <div class="alert alert-info" style="font-size:0.9em;">
-            💡 جميع الطلاب <strong>حاضرون تلقائياً</strong>. اضغط فقط على الغائبين وأصحاب الأعذار. الهروب والتأخير للعلم فقط (لا يُحسبان في الإنذارات).
-        </div>
         <div class="daily-panel">
             <div class="daily-controls">
                 <label>📅 التاريخ: <input type="date" id="dailyDate"></label>
@@ -139,9 +120,10 @@
                 <button class="btn btn-success" onclick="saveDailyRecord()">💾 حفظ</button>
             </div>
             <div class="bulk-actions">
+                <button class="btn btn-success btn-small" onclick="markAll('present')">✅ الكل حاضر</button>
                 <button class="btn btn-danger btn-small" onclick="markAll('absent')">❌ الكل غائب</button>
                 <button class="btn btn-info btn-small" onclick="markAll('excused')">📝 الكل بعذر</button>
-                <button class="btn btn-secondary btn-small" onclick="resetAll()">🔄 إعادة تعيين (الكل حاضر)</button>
+                <button class="btn btn-secondary btn-small" onclick="resetAll()">🔄 إعادة تعيين</button>
             </div>
             <div class="daily-info">
                 <span>✅ حاضر: <strong id="cPresent">0</strong></span>
@@ -166,7 +148,6 @@
         </div>
     </section>
 
-    <!-- التقارير -->
     <section id="page-reports" class="page">
         <h2 class="page-title">📊 التقارير</h2>
         <div class="filter-form">
@@ -189,19 +170,15 @@
         <div id="reportsContainer"></div>
     </section>
 
-    <!-- التنبيهات -->
     <section id="page-alerts" class="page">
         <h2 class="page-title">🔔 التنبيهات</h2>
-        <div class="alert alert-info">ℹ️ تُحسب التنبيهات على <strong>أيام الغياب بدون عذر فقط</strong>.</div>
+        <div class="alert alert-info">ℹ️ تُحسب على <strong>أيام الغياب بدون عذر فقط</strong>.</div>
         <div id="alertsList"></div>
     </section>
 
-    <!-- إدارة الطلاب -->
     <section id="page-students-admin" class="page">
         <h2 class="page-title">👥 إدارة الطلاب</h2>
-        <div class="admin-panel">
-            <label>اختر الصف: <select id="adminClassSelect"></select></label>
-        </div>
+        <div class="admin-panel"><label>اختر الصف: <select id="adminClassSelect"></select></label></div>
         <div class="admin-grid">
             <div class="admin-card">
                 <h3>➕ إضافة طالب</h3>
@@ -232,7 +209,6 @@
         </div>
     </section>
 
-    <!-- إدارة المستخدمين -->
     <section id="page-users-admin" class="page">
         <h2 class="page-title">🔑 إدارة المستخدمين</h2>
         <div class="admin-card" style="max-width:600px;">
@@ -267,7 +243,6 @@
         </div>
     </section>
 
-    <!-- النسخ الاحتياطي -->
     <section id="page-backup" class="page">
         <h2 class="page-title">💾 النسخ الاحتياطي</h2>
         <div class="alert alert-info">ℹ️ احفظ نسخة احتياطية دورياً.</div>
@@ -283,9 +258,7 @@
         </div>
     </section>
 
-    <!-- صفحة الطالب -->
     <section id="page-student" class="page"></section>
-
 </main>
 
 <footer>© 2026-2027 - مدرسة الطرة الثانوية للبنين</footer>
@@ -298,7 +271,7 @@
         <p id="periodModalStudent" style="color:#666; margin-bottom:15px;"></p>
 
         <div class="modal-section">
-            <label>📚 اختر الحصص (يمكن اختيار أكثر من واحدة):</label>
+            <label>📚 اختر الحصص:</label>
             <div class="period-buttons" id="periodButtons">
                 <button class="period-btn" onclick="selectPeriod(1)">1</button>
                 <button class="period-btn" onclick="selectPeriod(2)">2</button>
@@ -334,22 +307,7 @@
     <div class="warning-paper" id="warningPaper"></div>
 </div>
 
-<script>
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-        navigator.serviceWorker.register("service-worker.js").catch(function(e) {});
-    });
-}
-window.addEventListener("load", function() {
-    setTimeout(function() {
-        const splash = document.getElementById("splashScreen");
-        if (splash) {
-            splash.classList.add("hidden");
-            setTimeout(function() { splash.style.display = "none"; }, 600);
-        }
-    }, 1000);
-});
-</script>
+<!-- ✅ ملفات JavaScript فقط - لا يوجد أي كود داخلي -->
 <script src="config.js"></script>
 <script src="cloud.js"></script>
 <script src="students.js"></script>
