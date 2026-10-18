@@ -490,7 +490,10 @@ function renderAdminUsers() {
     tbody.innerHTML = "";
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
-        tbody.innerHTML += '<tr><td>' + username + '</td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td><td><button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑</button></td></tr>';
+        tbody.innerHTML += '<tr><td>' + username + '</td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td>'<td>' +
+    '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')" title="تغيير كلمة المرور">🔑</button> ' +
+    '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')" title="تعديل الاسم">✏️</button>' +
+'</td>';</tr>';
     });
 }
 
@@ -564,3 +567,52 @@ window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selec
 window.saveDailyRecord = saveDailyRecord; window.markAll = markAll; window.resetAll = resetAll; window.setDateToday = setDateToday; window.changeDay = changeDay;
 window.renderReports = renderReports; window.exportReportCSV = exportReportCSV; window.addStudentManual = addStudentManual; window.removeStudent = removeStudent; window.importFromExcel = importFromExcel;
 window.addUserManual = addUserManual; window.changeUserPassword = changeUserPassword; window.removeUser = removeUser; window.exportBackup = exportBackup; window.importBackup = importBackup; window.syncFromCloud = syncToCloud;
+
+// ===== دوال تعديل المستخدم =====
+function openEditUserModal(username) {
+    const user = State.users[username];
+    if (!user) return;
+
+    document.getElementById("editUserUsername").value = username;
+    document.getElementById("editUserName").value = user.name;
+    document.getElementById("editUserPassword").value = user.password;
+    document.getElementById("editUserTarget").textContent = "حساب: " + username;
+
+    document.getElementById("editUserModal").style.display = "flex";
+}
+
+function closeEditUserModal() {
+    document.getElementById("editUserModal").style.display = "none";
+}
+
+async function saveUserEdit() {
+    const username = document.getElementById("editUserUsername").value;
+    const newName = document.getElementById("editUserName").value.trim();
+    const newPassword = document.getElementById("editUserPassword").value.trim();
+
+    if (!newName) {
+        alert("❌ يجب إدخال الاسم");
+        return;
+    }
+
+    // تحديث البيانات في الذاكرة
+    State.users[username].name = newName;
+    if (newPassword) {
+        State.users[username].password = newPassword;
+    }
+
+    // حفظ في السحابة
+    updateSyncStatus("syncing", "⏳ جارٍ الحفظ...");
+    const ok = await syncToCloud();
+    
+    if (ok) {
+        alert("✅ تم تعديل البيانات بنجاح");
+        closeEditUserModal();
+        renderAdminUsers(); // تحديث الجدول
+    }
+}
+
+// تصدير الدوال عالمياً لتتمكن الأزرار من الوصول إليها
+window.openEditUserModal = openEditUserModal;
+window.closeEditUserModal = closeEditUserModal;
+window.saveUserEdit = saveUserEdit;
