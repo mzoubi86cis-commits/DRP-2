@@ -264,6 +264,29 @@
 <footer>© 2026-2027 - مدرسة الطرة الثانوية للبنين</footer>
 </div>
 
+<!-- نافذة تعديل المستخدم -->
+<div class="modal" id="editUserModal" style="display: none;">
+    <div class="modal-content">
+        <h3>✏️ تعديل بيانات المستخدم</h3>
+        <p id="editUserTarget" style="color:#666; margin-bottom:15px; font-weight:bold;"></p>
+        
+        <input type="hidden" id="editUserUsername">
+        
+        <label>الاسم الكامل</label>
+        <input type="text" id="editUserName" placeholder="الاسم الجديد">
+        
+        <label>كلمة المرور (اتركها فارغة إذا لا تريد تغييرها)</label>
+        <input type="text" id="editUserPassword" placeholder="كلمة المرور الجديدة">
+        
+        <div class="modal-actions" style="margin-top:20px;">
+            <button class="btn btn-success" onclick="saveUserEdit()">💾 حفظ التعديلات</button>
+            <button class="btn btn-secondary" onclick="closeEditUserModal()">❌ إلغاء</button>
+        </div>
+    </div>
+</div>
+
+
+    
 <!-- نافذة اختيار الحصة -->
 <div class="period-modal" id="periodModal">
     <div class="period-modal-content">
