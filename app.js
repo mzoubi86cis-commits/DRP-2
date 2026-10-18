@@ -519,11 +519,11 @@ function openEditUserModal(username) {
     document.getElementById("editUserName").value = user.name;
     document.getElementById("editUserPassword").value = user.password;
     document.getElementById("editUserTarget").textContent = "حساب: " + username;
-    document.getElementById("editUserModal").style.display = "flex";
+    document.getElementById("editUserModal").classList.add("show");
 }
 
 function closeEditUserModal() {
-    document.getElementById("editUserModal").style.display = "none";
+    document.getElementById("editUserModal").classList.remove("show");
 }
 
 async function saveUserEdit() {
