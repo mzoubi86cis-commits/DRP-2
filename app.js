@@ -1,5 +1,5 @@
 /* ==========================================================================
-   app.js - النسخة النهائية (مع ميزة إرسال واتساب)
+   app.js - النسخة النهائية (ميزة الواتساب + زر تعديل المستخدم)
    ========================================================================== */
 
 // ===== حالة التطبيق =====
@@ -371,7 +371,6 @@ function openStudent(sid) {
             '<div class="stat-box"><span class="stat-num" style="color:var(--escape);">' + escapeHours + '</span><span class="stat-lbl">🏃 هروب</span></div>' +
             '<div class="stat-box"><span class="stat-num" style="color:var(--late);">' + lateHours + '</span><span class="stat-lbl">⏰ تأخير</span></div>' +
         '</div>' + 
-        // 👇 زر الواتساب وزر الطباعة
         '<div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">' +
             (level > 0 ? '<button class="btn btn-warning" onclick="showWarning(' + sid + ')">📨 طباعة إنذار</button>' : '') +
             '<button class="btn" style="background:#25D366; color:white; font-weight:bold;" onclick="sendWhatsApp(' + sid + ')">📱 إرسال إنذار واتساب</button>' +
@@ -490,10 +489,10 @@ function renderAdminUsers() {
     tbody.innerHTML = "";
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
-        tbody.innerHTML += '<tr><td>' + username + '</td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td>'<td>' +
-    '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')" title="تغيير كلمة المرور">🔑</button> ' +
-    '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')" title="تعديل الاسم">✏️</button>' +
-'</td>';</tr>';
+        tbody.innerHTML += '<tr><td>' + username + '</td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td><td>' +
+            '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')" title="تغيير كلمة المرور">🔑</button> ' +
+            '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')" title="تعديل الاسم">✏️</button>' +
+            '</td></tr>';
     });
 }
 
@@ -511,6 +510,37 @@ function addUserManual() {
 
 function changeUserPassword(u) { const p = prompt("كلمة المرور الجديدة لـ " + u); if (p) { Admin.changePassword(State, u, p); autoSave(300); } }
 function removeUser(u) { if (confirm("حذف " + u + "؟")) { Admin.removeUser(State, u); autoSave(300); renderAdminUsers(); } }
+
+// ===== نافذة تعديل المستخدم =====
+function openEditUserModal(username) {
+    const user = State.users[username];
+    if (!user) return;
+    document.getElementById("editUserUsername").value = username;
+    document.getElementById("editUserName").value = user.name;
+    document.getElementById("editUserPassword").value = user.password;
+    document.getElementById("editUserTarget").textContent = "حساب: " + username;
+    document.getElementById("editUserModal").style.display = "flex";
+}
+
+function closeEditUserModal() {
+    document.getElementById("editUserModal").style.display = "none";
+}
+
+async function saveUserEdit() {
+    const username = document.getElementById("editUserUsername").value;
+    const newName = document.getElementById("editUserName").value.trim();
+    const newPassword = document.getElementById("editUserPassword").value.trim();
+
+    if (!newName) return alert("❌ يجب إدخال الاسم");
+    State.users[username].name = newName;
+    if (newPassword) State.users[username].password = newPassword;
+
+    if (await syncToCloud()) {
+        alert("✅ تم تعديل البيانات بنجاح");
+        closeEditUserModal();
+        renderAdminUsers();
+    }
+}
 
 // ===== النسخ الاحتياطي =====
 function exportBackup() { const b = new Blob([JSON.stringify(State, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "btec_backup.json"; a.click(); }
@@ -567,52 +597,6 @@ window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selec
 window.saveDailyRecord = saveDailyRecord; window.markAll = markAll; window.resetAll = resetAll; window.setDateToday = setDateToday; window.changeDay = changeDay;
 window.renderReports = renderReports; window.exportReportCSV = exportReportCSV; window.addStudentManual = addStudentManual; window.removeStudent = removeStudent; window.importFromExcel = importFromExcel;
 window.addUserManual = addUserManual; window.changeUserPassword = changeUserPassword; window.removeUser = removeUser; window.exportBackup = exportBackup; window.importBackup = importBackup; window.syncFromCloud = syncToCloud;
+window.openEditUserModal = openEditUserModal; window.closeEditUserModal = closeEditUserModal; window.saveUserEdit = saveUserEdit;
 
-// ===== دوال تعديل المستخدم =====
-function openEditUserModal(username) {
-    const user = State.users[username];
-    if (!user) return;
-
-    document.getElementById("editUserUsername").value = username;
-    document.getElementById("editUserName").value = user.name;
-    document.getElementById("editUserPassword").value = user.password;
-    document.getElementById("editUserTarget").textContent = "حساب: " + username;
-
-    document.getElementById("editUserModal").style.display = "flex";
-}
-
-function closeEditUserModal() {
-    document.getElementById("editUserModal").style.display = "none";
-}
-
-async function saveUserEdit() {
-    const username = document.getElementById("editUserUsername").value;
-    const newName = document.getElementById("editUserName").value.trim();
-    const newPassword = document.getElementById("editUserPassword").value.trim();
-
-    if (!newName) {
-        alert("❌ يجب إدخال الاسم");
-        return;
-    }
-
-    // تحديث البيانات في الذاكرة
-    State.users[username].name = newName;
-    if (newPassword) {
-        State.users[username].password = newPassword;
-    }
-
-    // حفظ في السحابة
-    updateSyncStatus("syncing", "⏳ جارٍ الحفظ...");
-    const ok = await syncToCloud();
-    
-    if (ok) {
-        alert("✅ تم تعديل البيانات بنجاح");
-        closeEditUserModal();
-        renderAdminUsers(); // تحديث الجدول
-    }
-}
-
-// تصدير الدوال عالمياً لتتمكن الأزرار من الوصول إليها
-window.openEditUserModal = openEditUserModal;
-window.closeEditUserModal = closeEditUserModal;
-window.saveUserEdit = saveUserEdit;
+window.startApp = startApp;
