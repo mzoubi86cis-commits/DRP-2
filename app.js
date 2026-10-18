@@ -1,18 +1,25 @@
 /* ==========================================================================
-   app.js - نسخة الإصلاح النهائي (مضمونة 100%)
+   app.js - النسخة النهائية (مع ميزة إرسال واتساب)
    ========================================================================== */
 
+// ===== حالة التطبيق =====
 const State = {
     students: [], records: [], users: {}, currentUser: null,
     currentClassId: null, dailyDate: todayISO(), dailySelections: {},
     reportsCache: null, autoSaveTimer: null
 };
 
+// ===== الحفظ التلقائي =====
 function autoSave(delay) {
+    delay = delay || 800;
     if (State.autoSaveTimer) clearTimeout(State.autoSaveTimer);
+    updateSyncStatus("syncing", "⏳ حفظ تلقائي...");
     State.autoSaveTimer = setTimeout(async function() {
-        await syncToCloud();
-    }, delay || 800);
+        try {
+            await Cloud.save({ students: State.students, records: State.records, users: State.users, lastUpdate: new Date().toISOString() });
+            updateSyncStatus("synced", "✅ تم الحفظ");
+        } catch (err) { updateSyncStatus("error", "❌ فشل الحفظ"); }
+    }, delay);
 }
 
 function updateSyncStatus(status, text) {
@@ -22,17 +29,28 @@ function updateSyncStatus(status, text) {
     el.textContent = text;
 }
 
+// ===== السحابة =====
+async function syncFromCloud() {
+    if (!confirm("سيتم استبدال البيانات المحلية بالبيانات السحابية. متابعة؟")) return;
+    updateSyncStatus("syncing", "⏳ جارٍ التحميل...");
+    try {
+        const data = await Cloud.load();
+        if (data) {
+            State.students = data.students || [];
+            State.records = data.records || [];
+            State.users = data.users || DEFAULT_USERS;
+            if (!data.users) await syncToCloud();
+        }
+        renderAll(); updateSyncStatus("synced", "✅ متزامن"); alert("✅ تمت المزامنة");
+    } catch (err) { alert("⚠️ فشل التحميل: " + err.message); }
+}
+
 async function syncToCloud() {
     updateSyncStatus("syncing", "⏳ جارٍ الحفظ...");
     try {
         await Cloud.save({ students: State.students, records: State.records, users: State.users, lastUpdate: new Date().toISOString() });
-        updateSyncStatus("synced", "✅ متزامن");
-        return true;
-    } catch (err) {
-        updateSyncStatus("error", "❌ فشل الحفظ");
-        alert("⚠️ فشل الحفظ: " + err.message);
-        return false;
-    }
+        updateSyncStatus("synced", "✅ متزامن"); return true;
+    } catch (err) { alert("⚠️ فشل الحفظ: " + err.message); return false; }
 }
 
 async function loadData() {
@@ -43,17 +61,20 @@ async function loadData() {
             State.students = data.students || [];
             State.records = data.records || [];
             State.users = data.users || DEFAULT_USERS;
+        } else {
+            State.students = []; State.records = []; State.users = DEFAULT_USERS;
+            await syncToCloud();
         }
         updateSyncStatus("synced", "✅ متزامن");
     } catch (e) { updateSyncStatus("error", "⚠️ وضع محلي"); }
 }
 
+// ===== التنقل =====
 function navigate(page) {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     const target = document.getElementById("page-" + page);
     if (target) target.classList.add("active");
     document.querySelectorAll(".nav-btn").forEach(b => { if (b.dataset.page) b.classList.toggle("active", b.dataset.page === page); });
-    
     if (page === "home") { renderStats(); renderStudentsTable(); }
     if (page === "daily") { renderDailyTable(); }
     if (page === "reports") { renderReports(); }
@@ -63,6 +84,7 @@ function navigate(page) {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// ===== محدد الصف =====
 function renderClassSelector() {
     const container = document.getElementById("classSelector");
     if (!container) return;
@@ -81,12 +103,12 @@ function selectClass(classId) {
     renderClassSelector(); renderStats(); renderStudentsTable(); renderDailyTable();
 }
 
+// ===== الإحصائيات =====
 function renderStats() {
     if (!State.currentClassId) return;
     const students = Students.getByClass(State, State.currentClassId);
     const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
     let tA = 0, tE = 0, tEsc = 0, tLate = 0;
-
     students.forEach(s => {
         const c = Attendance.countForAlerts(State, s.id);
         counts[getStatusColor(c)]++;
@@ -95,7 +117,6 @@ function renderStats() {
         tEsc += Attendance.countEscapeHours(State, s.id);
         tLate += Attendance.countLateHours(State, s.id);
     });
-
     document.getElementById("statsCards").innerHTML =
         '<div class="card total"><h3>👥 الطلاب</h3><span class="num">' + students.length + '</span></div>' +
         '<div class="card red"><h3>❌ غياب</h3><span class="num">' + tA + '</span></div>' +
@@ -108,6 +129,7 @@ function renderStats() {
         '<div class="card red"><h3>🔴 أحمر</h3><span class="num">' + counts.red + '</span></div>';
 }
 
+// ===== جدول الطلاب =====
 function renderStudentsTable() {
     const tbody = document.getElementById("studentsTable");
     if (!tbody || !State.currentClassId) return;
@@ -137,18 +159,14 @@ function renderStudentsTable() {
     });
 }
 
-// ==========================================
-// التسجيل اليومي (تم تبسيطه لضمان الحفظ)
-// ==========================================
+// ===== التسجيل اليومي =====
 function renderDailyTable() {
     const tbody = document.getElementById("dailyTable");
     if (!tbody || !State.currentClassId) return;
     tbody.innerHTML = "";
     State.dailySelections = {};
-
     const students = Students.getByClass(State, State.currentClassId);
     
-    // تحميل السجلات السابقة
     const classStudentIds = students.map(s => s.id);
     const existing = {};
     State.records.filter(r => r.date === State.dailyDate && classStudentIds.includes(r.student_id)).forEach(r => {
@@ -250,21 +268,15 @@ function changeDay(delta) {
 async function saveDailyRecord() {
     if (!State.currentClassId) return alert("اختر صفاً أولاً");
     const students = Students.getByClass(State, State.currentClassId);
-    
     students.forEach(s => {
         if (!State.dailySelections[s.id]) State.dailySelections[s.id] = { status: "present", escapes: [], lates: [] };
     });
-
     Attendance.saveDay(State, State.currentClassId, State.dailyDate, State.dailySelections);
-
     const ok = await syncToCloud();
-    if (ok) {
-        renderAll();
-        alert("✅ تم حفظ " + students.length + " سجل بنجاح");
-    }
+    if (ok) { renderAll(); alert("✅ تم حفظ " + students.length + " سجل بنجاح"); }
 }
 
-// نافذة الحصص
+// ===== نافذة الحصص =====
 let periodModalState = { studentId: null, mode: null, periods: [] };
 
 function openPeriodModal(sid, mode) {
@@ -316,22 +328,17 @@ function confirmPeriodSelection() {
     if (periodModalState.mode === "late") {
         for (const p of periodModalState.periods) { if (!p.minutes) return alert("اختر الدقائق للحصة " + p.period); }
     }
-
     const sid = periodModalState.studentId;
     if (!State.dailySelections[sid]) State.dailySelections[sid] = { status: "present", escapes: [], lates: [] };
-
     if (periodModalState.mode === "escape") State.dailySelections[sid].escapes = periodModalState.periods.map(p => ({ period: p.period }));
     else State.dailySelections[sid].lates = periodModalState.periods.map(p => ({ period: p.period, minutes: p.minutes }));
-
-    closePeriodModal();
-    renderDailyTable();
-    updateDailyCounters();
+    closePeriodModal(); renderDailyTable(); updateDailyCounters();
 }
 
 function cancelPeriodSelection() { closePeriodModal(); }
 function closePeriodModal() { document.getElementById("periodModal").classList.remove("show", "escape-mode", "late-mode"); periodModalState = { studentId: null, mode: null, periods: [] }; }
 
-// صفحة الطالب
+// ===== صفحة الطالب =====
 function openStudent(sid) {
     const s = State.students.find(x => x.id === sid);
     if (!s) return;
@@ -363,10 +370,12 @@ function openStudent(sid) {
             '<div class="stat-box"><span class="stat-num" style="color:var(--excused);">' + excused + '</span><span class="stat-lbl">📝 بعذر</span></div>' +
             '<div class="stat-box"><span class="stat-num" style="color:var(--escape);">' + escapeHours + '</span><span class="stat-lbl">🏃 هروب</span></div>' +
             '<div class="stat-box"><span class="stat-num" style="color:var(--late);">' + lateHours + '</span><span class="stat-lbl">⏰ تأخير</span></div>' +
-        '</div>' + '<div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">' +
-    (level > 0 ? '<button class="btn btn-warning" onclick="showWarning(' + sid + ')">📨 طباعة إنذار</button>' : '') +
-    '<button class="btn" style="background:#25D366; color:white; font-weight:bold;" onclick="sendWhatsApp(' + sid + ')">📱 إرسال إنذار واتساب</button>' +
-'</div>' +
+        '</div>' + 
+        // 👇 زر الواتساب وزر الطباعة
+        '<div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">' +
+            (level > 0 ? '<button class="btn btn-warning" onclick="showWarning(' + sid + ')">📨 طباعة إنذار</button>' : '') +
+            '<button class="btn" style="background:#25D366; color:white; font-weight:bold;" onclick="sendWhatsApp(' + sid + ')">📱 إرسال إنذار واتساب</button>' +
+        '</div>' +
         '</div><h3>📋 السجل الكامل</h3>' + recordsHTML;
     navigate("student");
 }
@@ -377,18 +386,42 @@ async function deleteRecord(rid, sid) {
     if (await syncToCloud()) openStudent(sid);
 }
 
-// التقارير
+// ===== إرسال واتساب =====
+function sendWhatsApp(sid) {
+    const s = State.students.find(x => x.id === sid);
+    if (!s) return;
+    
+    const total = Attendance.countForAlerts(State, sid);
+    const level = getWarningLevel(total);
+    const classInfo = getClassById(s.classId);
+    
+    if (level === 0) { alert("هذا الطالب منتظم ولا يحتاج إنذاراً."); return; }
+
+    let warningType = level === 1 ? "إنذار أول" : level === 2 ? "إنذار ثانٍ" : "إنذار نهائي";
+    
+    let msg = `*مدرسة الطرة الثانوية للبنين*\n\n`;
+    msg += `تحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\n`;
+    msg += `نحيطكم علماً بأن ابنكم قد تجاوز عدد أيام الغياب المسموح بها، وقد بلغت حتى تاريخ اليوم *${total} أيام*.\n\n`;
+    msg += `⚠️ *${warningType} بغياب الطالب*\n\n`;
+    msg += `الصف: ${classInfo ? classInfo.name : ''}\n`;
+    msg += `رقم الطالب: ${s.number}\n\n`;
+    msg += `نرجو من سيادتكم التكرم بمتابعة دوام ابنكم، والتواصل مع إدارة المدرسة في أقرب وقت.\n\n`;
+    msg += `ولكم منا فائق الاحترام والتقدير.`;
+
+    const encodedMsg = encodeURIComponent(msg);
+    window.open('https://wa.me/?text=' + encodedMsg, '_blank');
+}
+
+// ===== التقارير =====
 function renderReports() {
     const start = document.getElementById("repStart").value;
     const end = document.getElementById("repEnd").value;
     const mode = document.getElementById("repMode").value;
     const container = document.getElementById("reportsContainer");
     if (!State.currentClassId) return;
-
     const rows = Reports.generate(State, State.currentClassId, start, end, mode);
     State.reportsCache = { rows, start, end };
     const classInfo = getClassById(State.currentClassId);
-
     document.getElementById("reportsSummary").innerHTML = '📅 من <strong>' + start + '</strong> إلى <strong>' + end + '</strong> — ' + classInfo.name;
     container.innerHTML = '<div class="table-wrap"><table><thead><tr><th>#</th><th>الطالب</th><th>غياب</th><th>بعذر</th><th>هروب</th><th>تأخير</th><th>دقائق</th><th>الحالة</th></tr></thead><tbody>' +
         rows.map((r, i) => '<tr class="row-' + r.color + '"><td>' + (i + 1) + '</td><td>' + r.nameAr + '</td><td>' + r.absent + '</td><td>' + r.excused + '</td><td>' + r.escapeHours + '</td><td>' + r.lateHours + '</td><td>' + r.lateMinutes + '</td><td>' + r.status + '</td></tr>').join("") +
@@ -397,7 +430,7 @@ function renderReports() {
 
 function exportReportCSV() { if (State.reportsCache && State.currentClassId) Reports.exportCSV(State.reportsCache.rows, getClassById(State.currentClassId).short, State.reportsCache.start, State.reportsCache.end); }
 
-// التنبيهات
+// ===== التنبيهات =====
 function renderAlerts() {
     if (!State.currentClassId) return;
     const students = Students.getByClass(State, State.currentClassId);
@@ -411,7 +444,7 @@ function renderAlerts() {
     }).join("");
 }
 
-// إدارة الطلاب والمستخدمين (نفس الكود السابق)
+// ===== الإدارة =====
 function renderAdminStudents() {
     const select = document.getElementById("adminClassSelect");
     if (!select) return;
@@ -476,7 +509,7 @@ function addUserManual() {
 function changeUserPassword(u) { const p = prompt("كلمة المرور الجديدة لـ " + u); if (p) { Admin.changePassword(State, u, p); autoSave(300); } }
 function removeUser(u) { if (confirm("حذف " + u + "؟")) { Admin.removeUser(State, u); autoSave(300); renderAdminUsers(); } }
 
-// النسخ الاحتياطي
+// ===== النسخ الاحتياطي =====
 function exportBackup() { const b = new Blob([JSON.stringify(State, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "btec_backup.json"; a.click(); }
 async function importBackup() {
     const f = document.getElementById("importFile").files[0]; if (!f) return;
@@ -488,7 +521,7 @@ async function importBackup() {
 
 function renderAll() { renderClassSelector(); renderStats(); renderStudentsTable(); renderReports(); renderAlerts(); const b = document.getElementById("todayBadge"); if (b) b.textContent = "📅 " + todayISO(); }
 
-// الدخول والتشغيل
+// ===== الدخول =====
 (function() {
     function init() {
         document.getElementById("loginBtn").addEventListener("click", () => {
@@ -504,21 +537,15 @@ function renderAll() { renderClassSelector(); renderStats(); renderStudentsTable
                 document.getElementById("userBadge").textContent = users[u].name;
                 if (users[u].role !== "admin") document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
                 startApp();
-            } else {
-                document.getElementById("loginError").classList.add("show");
-            }
+            } else { document.getElementById("loginError").classList.add("show"); }
         });
         document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.removeItem(CLOUD_CONFIG.SESSION_KEY); location.reload(); });
-        
-        // إخفاء إعداد السحابة إذا كانت محفوظة
         const s = Cloud.getSettings();
         if (s && s.masterKey && s.binId) {
             document.getElementById("setupStep").style.display = "none";
             document.getElementById("passwordStep").style.display = "block";
             loadData();
-        } else {
-            document.getElementById("setupStep").style.display = "block";
-        }
+        } else { document.getElementById("setupStep").style.display = "block"; }
     }
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
@@ -533,42 +560,7 @@ async function startApp() {
 
 // تصدير الدوال
 window.openPeriodModal = openPeriodModal; window.selectPeriod = selectPeriod; window.selectMinutes = selectMinutes; window.confirmPeriodSelection = confirmPeriodSelection; window.cancelPeriodSelection = cancelPeriodSelection;
-window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selectClass = selectClass; window.openStudent = openStudent; window.deleteRecord = deleteRecord; window.showWarning = showWarning;
+window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selectClass = selectClass; window.openStudent = openStudent; window.deleteRecord = deleteRecord; window.showWarning = showWarning; window.sendWhatsApp = sendWhatsApp;
 window.saveDailyRecord = saveDailyRecord; window.markAll = markAll; window.resetAll = resetAll; window.setDateToday = setDateToday; window.changeDay = changeDay;
 window.renderReports = renderReports; window.exportReportCSV = exportReportCSV; window.addStudentManual = addStudentManual; window.removeStudent = removeStudent; window.importFromExcel = importFromExcel;
 window.addUserManual = addUserManual; window.changeUserPassword = changeUserPassword; window.removeUser = removeUser; window.exportBackup = exportBackup; window.importBackup = importBackup; window.syncFromCloud = syncToCloud;
-
-
-// ===== إرسال إنذار عبر واتساب =====
-function sendWhatsApp(sid) {
-    const s = State.students.find(x => x.id === sid);
-    if (!s) return;
-    
-    const total = Attendance.countForAlerts(State, sid);
-    const level = getWarningLevel(total);
-    const classInfo = getClassById(s.classId);
-    
-    if (level === 0) {
-        alert("هذا الطالب منتظم ولا يحتاج إنذاراً.");
-        return;
-    }
-
-    let warningType = level === 1 ? "إنذار أول" : level === 2 ? "إنذار ثانٍ" : "إنذار نهائي";
-    
-    // بناء نص الرسالة
-    let msg = `*مدرسة الطرة الثانوية للبنين*\n\n`;
-    msg += `تحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\n`;
-    msg += `نحيطكم علماً بأن ابنكم قد تجاوز عدد أيام الغياب المسموح بها، وقد بلغت حتى تاريخ اليوم *${total} أيام*.\n\n`;
-    msg += `⚠️ *${warningType} بغياب الطالب*\n\n`;
-    msg += `الصف: ${classInfo ? classInfo.name : ''}\n`;
-    msg += `رقم الطالب: ${s.number}\n\n`;
-    msg += `نرجو من سيادتكم التكرم بمتابعة دوام ابنكم، والتواصل مع إدارة المدرسة في أقرب وقت.\n\n`;
-    msg += `ولكم منا فائق الاحترام والتقدير.`;
-
-    // ترميز النص ليناسب روابط الويب
-    const encodedMsg = encodeURIComponent(msg);
-
-    // فتح واتساب
-    // إذا كان الطالب ليس له رقم محفوظ، سيطلب منك اختيار جهة اتصال
-    window.open('https://wa.me/?text=' + encodedMsg, '_blank');
-}
