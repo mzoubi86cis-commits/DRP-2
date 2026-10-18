@@ -363,7 +363,10 @@ function openStudent(sid) {
             '<div class="stat-box"><span class="stat-num" style="color:var(--excused);">' + excused + '</span><span class="stat-lbl">📝 بعذر</span></div>' +
             '<div class="stat-box"><span class="stat-num" style="color:var(--escape);">' + escapeHours + '</span><span class="stat-lbl">🏃 هروب</span></div>' +
             '<div class="stat-box"><span class="stat-num" style="color:var(--late);">' + lateHours + '</span><span class="stat-lbl">⏰ تأخير</span></div>' +
-        '</div>' + (level > 0 ? '<div style="margin-top:15px;"><button class="btn btn-warning" onclick="showWarning(' + sid + ')">📨 طباعة إنذار</button></div>' : '') +
+        '</div>' + '<div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap;">' +
+    (level > 0 ? '<button class="btn btn-warning" onclick="showWarning(' + sid + ')">📨 طباعة إنذار</button>' : '') +
+    '<button class="btn" style="background:#25D366; color:white; font-weight:bold;" onclick="sendWhatsApp(' + sid + ')">📱 إرسال إنذار واتساب</button>' +
+'</div>' +
         '</div><h3>📋 السجل الكامل</h3>' + recordsHTML;
     navigate("student");
 }
@@ -534,3 +537,38 @@ window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selec
 window.saveDailyRecord = saveDailyRecord; window.markAll = markAll; window.resetAll = resetAll; window.setDateToday = setDateToday; window.changeDay = changeDay;
 window.renderReports = renderReports; window.exportReportCSV = exportReportCSV; window.addStudentManual = addStudentManual; window.removeStudent = removeStudent; window.importFromExcel = importFromExcel;
 window.addUserManual = addUserManual; window.changeUserPassword = changeUserPassword; window.removeUser = removeUser; window.exportBackup = exportBackup; window.importBackup = importBackup; window.syncFromCloud = syncToCloud;
+
+
+// ===== إرسال إنذار عبر واتساب =====
+function sendWhatsApp(sid) {
+    const s = State.students.find(x => x.id === sid);
+    if (!s) return;
+    
+    const total = Attendance.countForAlerts(State, sid);
+    const level = getWarningLevel(total);
+    const classInfo = getClassById(s.classId);
+    
+    if (level === 0) {
+        alert("هذا الطالب منتظم ولا يحتاج إنذاراً.");
+        return;
+    }
+
+    let warningType = level === 1 ? "إنذار أول" : level === 2 ? "إنذار ثانٍ" : "إنذار نهائي";
+    
+    // بناء نص الرسالة
+    let msg = `*مدرسة الطرة الثانوية للبنين*\n\n`;
+    msg += `تحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\n`;
+    msg += `نحيطكم علماً بأن ابنكم قد تجاوز عدد أيام الغياب المسموح بها، وقد بلغت حتى تاريخ اليوم *${total} أيام*.\n\n`;
+    msg += `⚠️ *${warningType} بغياب الطالب*\n\n`;
+    msg += `الصف: ${classInfo ? classInfo.name : ''}\n`;
+    msg += `رقم الطالب: ${s.number}\n\n`;
+    msg += `نرجو من سيادتكم التكرم بمتابعة دوام ابنكم، والتواصل مع إدارة المدرسة في أقرب وقت.\n\n`;
+    msg += `ولكم منا فائق الاحترام والتقدير.`;
+
+    // ترميز النص ليناسب روابط الويب
+    const encodedMsg = encodeURIComponent(msg);
+
+    // فتح واتساب
+    // إذا كان الطالب ليس له رقم محفوظ، سيطلب منك اختيار جهة اتصال
+    window.open('https://wa.me/?text=' + encodedMsg, '_blank');
+}
