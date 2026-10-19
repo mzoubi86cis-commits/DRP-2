@@ -496,14 +496,15 @@ function renderAdminUsers() {
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
         
-        // إظهار الأزرار فقط للمدير (admin)
         let actionButtons = '';
+        
+        // 🔴 التعديل هنا: إظهار الأزرار فقط إذا كان اسم المستخدم هو 'admin'
         if (username === 'admin') {
             actionButtons = 
-                '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')" title="تغيير كلمة المرور">🔑 كلمة المرور</button> ' +
-                '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')" title="تعديل الاسم">✏️ تعديل الاسم</button>';
+                '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑 كلمة المرور</button> ' +
+                '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')">✏️ تعديل</button>';
         } else {
-            actionButtons = '<span style="color:#999; font-size:0.85em;">— محمي —</span>';
+            actionButtons = '<span style="color:#dc3545; font-weight:bold;">🔒 محمي</span>';
         }
 
         const tr = document.createElement("tr");
