@@ -1,5 +1,5 @@
 /* ==========================================================================
-   app.js - النسخة النهائية (ميزة الواتساب + زر تعديل المستخدم)
+   app.js - النسخة النهائية (شاملة كل التعديلات)
    ========================================================================== */
 
 // ===== حالة التطبيق =====
@@ -482,23 +482,17 @@ function importFromExcel() {
     });
 }
 
+// ===== إدارة المستخدمين =====
 function renderAdminUsers() {
     const select = document.getElementById("newClassId");
-    if (select && !select.innerHTML.trim()) {
-        select.innerHTML = '<option value="">— بدون —</option>' + 
-            CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
-    }
-    
+    if (select && !select.innerHTML.trim()) select.innerHTML = '<option value="">—</option>' + CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
     const tbody = document.getElementById("usersTable");
-    if (!tbody) return;
     tbody.innerHTML = "";
-    
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
         
+        // إظهار الأزرار فقط للمدير
         let actionButtons = '';
-        
-        // 🔴 التعديل هنا: إظهار الأزرار فقط إذا كان اسم المستخدم هو 'admin'
         if (username === 'admin') {
             actionButtons = 
                 '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑 كلمة المرور</button> ' +
@@ -507,14 +501,7 @@ function renderAdminUsers() {
             actionButtons = '<span style="color:#dc3545; font-weight:bold;">🔒 محمي</span>';
         }
 
-        const tr = document.createElement("tr");
-        tr.innerHTML =
-            '<td><strong>' + username + '</strong></td>' +
-            '<td>' + u.name + '</td>' +
-            '<td>' + (u.role === "admin" ? "👑 مدير" : "👨‍🏫 معلم") + '</td>' +
-            '<td>' + (u.classId || '—') + '</td>' +
-            '<td>' + actionButtons + '</td>';
-        tbody.appendChild(tr);
+        tbody.innerHTML += '<tr><td><strong>' + username + '</strong></td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td><td>' + actionButtons + '</td></tr>';
     });
 }
 
@@ -541,11 +528,11 @@ function openEditUserModal(username) {
     document.getElementById("editUserName").value = user.name;
     document.getElementById("editUserPassword").value = user.password;
     document.getElementById("editUserTarget").textContent = "حساب: " + username;
-    document.getElementById("editUserModal").classList.add("show");
+    document.getElementById("editUserModal").style.display = "flex";
 }
 
 function closeEditUserModal() {
-    document.getElementById("editUserModal").classList.remove("show");
+    document.getElementById("editUserModal").style.display = "none";
 }
 
 async function saveUserEdit() {
