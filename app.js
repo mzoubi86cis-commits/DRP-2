@@ -485,24 +485,49 @@ function importFromExcel() {
 // ===== إدارة المستخدمين =====
 function renderAdminUsers() {
     const select = document.getElementById("newClassId");
-    if (select && !select.innerHTML.trim()) select.innerHTML = '<option value="">—</option>' + CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
+    if (select && !select.innerHTML.trim()) {
+        select.innerHTML = '<option value="">— بدون —</option>' + 
+            CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
+    }
+    
     const tbody = document.getElementById("usersTable");
+    if (!tbody) return;
     tbody.innerHTML = "";
+    
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
         
-        // إظهار الأزرار فقط للمدير
-        let actionButtons = '';
-        if (u.role === 'admin') {
-            actionButtons = 
-                '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑 كلمة المرور</button> ' +
-                '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')">✏️ تعديل</button>';
-        } else {
-            actionButtons = '<span style="color:#dc3545; font-weight:bold;">🔒 محمي</span>';
-        }
+        // إظهار الأزرار للجميع، ولكن سيتم التحقق من الصلاحية عند الضغط
+        let actionButtons = 
+            '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑 كلمة المرور</button> ' +
+            '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')">✏️ تعديل</button>';
 
-        tbody.innerHTML += '<tr><td><strong>' + username + '</strong></td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td><td>' + actionButtons + '</td></tr>';
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+            '<td><strong>' + username + '</strong></td>' +
+            '<td>' + u.name + '</td>' +
+            '<td>' + (u.role === "admin" ? "👑 مدير" : "👨‍🏫 معلم") + '</td>' +
+            '<td>' + (u.classId || '—') + '</td>' +
+            '<td>' + actionButtons + '</td>';
+        tbody.appendChild(tr);
     });
+}
+
+function openEditUserModal(username) {
+    // التحقق: هل الشخص الذي يفتح النافذة هو مدير؟
+    if (!State.currentUser || State.currentUser.role !== 'admin') {
+        alert("❌ عذراً، هذه الصلاحية للمدير فقط.");
+        return;
+    }
+    
+    const user = State.users[username];
+    if (!user) return;
+    
+    document.getElementById("editUserUsername").value = username;
+    document.getElementById("editUserName").value = user.name;
+    document.getElementById("editUserPassword").value = user.password;
+    document.getElementById("editUserTarget").textContent = "حساب: " + username;
+    document.getElementById("editUserModal").style.display = "flex";
 }
 
 function addUserManual() {
