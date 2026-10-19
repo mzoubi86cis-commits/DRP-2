@@ -493,7 +493,7 @@ function renderAdminUsers() {
         
         // إظهار الأزرار فقط للمدير
         let actionButtons = '';
-        if (username === 'admin') {
+        if (u.role === 'admin') {
             actionButtons = 
                 '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑 كلمة المرور</button> ' +
                 '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')">✏️ تعديل</button>';
