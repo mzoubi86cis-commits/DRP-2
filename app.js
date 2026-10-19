@@ -484,15 +484,36 @@ function importFromExcel() {
 
 function renderAdminUsers() {
     const select = document.getElementById("newClassId");
-    if (select && !select.innerHTML.trim()) select.innerHTML = '<option value="">—</option>' + CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
+    if (select && !select.innerHTML.trim()) {
+        select.innerHTML = '<option value="">— بدون —</option>' + 
+            CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
+    }
+    
     const tbody = document.getElementById("usersTable");
+    if (!tbody) return;
     tbody.innerHTML = "";
+    
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
-        tbody.innerHTML += '<tr><td>' + username + '</td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td><td>' +
-            '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')" title="تغيير كلمة المرور">🔑</button> ' +
-            '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')" title="تعديل الاسم">✏️</button>' +
-            '</td></tr>';
+        
+        // إظهار الأزرار فقط للمدير (admin)
+        let actionButtons = '';
+        if (username === 'admin') {
+            actionButtons = 
+                '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')" title="تغيير كلمة المرور">🔑 كلمة المرور</button> ' +
+                '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')" title="تعديل الاسم">✏️ تعديل الاسم</button>';
+        } else {
+            actionButtons = '<span style="color:#999; font-size:0.85em;">— محمي —</span>';
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+            '<td><strong>' + username + '</strong></td>' +
+            '<td>' + u.name + '</td>' +
+            '<td>' + (u.role === "admin" ? "👑 مدير" : "👨‍🏫 معلم") + '</td>' +
+            '<td>' + (u.classId || '—') + '</td>' +
+            '<td>' + actionButtons + '</td>';
+        tbody.appendChild(tr);
     });
 }
 
