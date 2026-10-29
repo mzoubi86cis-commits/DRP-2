@@ -13,23 +13,23 @@ const SCHOOL_INFO = {
 
 // ===== الصفوف =====
 const CLASSES = [
-    { id: "IT10", name: "تكنولوجيا المعلومات - عاشر",     short: "IT - عاشر",   teacher: "أ. منذر الزعبي", quality: "أ. يزن الخطيب" },
-    { id: "IT11", name: "تكنولوجيا المعلومات - أول ثانوي", short: "IT - أول",   teacher: "أ. منذر الزعبي", quality: "أ. يزن الخطيب" },
+    { id: "IT10", name: "تكنولوجيا المعلومات - عاشر",     short: "IT - عاشر",   teacher: "أ. فادي الحناوي", quality: "أ. يزن الخطيب" },
+    { id: "IT11", name: "تكنولوجيا المعلومات - أول ثانوي", short: "IT - أول",   teacher: "أ. علي الفواخرة", quality: "أ. يزن الخطيب" },
     { id: "IT12", name: "تكنولوجيا المعلومات - ثاني ثانوي", short: "IT - ثاني",  teacher: "أ. منذر الزعبي", quality: "أ. يزن الخطيب" },
-    { id: "BM10", name: "إدارة الأعمال - عاشر",              short: "BM - عاشر",   teacher: "أ. يزن الخطيب",  quality: "أ. منذر الزعبي" },
-    { id: "BM11", name: "إدارة الأعمال - أول ثانوي",         short: "BM - أول",   teacher: "أ. يزن الخطيب",  quality: "أ. منذر الزعبي" },
-    { id: "BM12", name: "إدارة الأعمال - ثاني ثانوي",        short: "BM - ثاني",  teacher: "أ. يزن الخطيب",  quality: "أ. منذر الزعبي" }
+    { id: "BM10", name: "إدارة الأعمال - عاشر",              short: "BM - عاشر",   teacher: "أ. محمد غرايبة",  quality: "أ. يزن الخطيب" },
+    { id: "BM11", name: "إدارة الأعمال - أول ثانوي",         short: "BM - أول",   teacher: "أ. غيث عليان",  quality: "أ. يزن الخطيب" },
+    { id: "BM12", name: "إدارة الأعمال - ثاني ثانوي",        short: "BM - ثاني",  teacher: "أ. محمد طويط",  quality: "أ. يزن الخطيب" }
 ];
 
 // ===== المستخدمون =====
 const DEFAULT_USERS = {
     "admin": { password: "admin-2026", name: "د. طارق جيت", role: "admin", classId: null },
-    "it10":  { password: "it10-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT10" },
-    "it11":  { password: "it11-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT11" },
+    "it10":  { password: "it10-2026",  name: "أ. فادي الحناوي", role: "teacher", classId: "IT10" },
+    "it11":  { password: "it11-2026",  name: "أ. علي الفواخرة", role: "teacher", classId: "IT11" },
     "it12":  { password: "it12-2026",  name: "أ. منذر الزعبي", role: "teacher", classId: "IT12" },
-    "bm10":  { password: "bm10-2026",  name: "أ. يزن الخطيب",  role: "teacher", classId: "BM10" },
-    "bm11":  { password: "bm11-2026",  name: "أ. يزن الخطيب",  role: "teacher", classId: "BM11" },
-    "bm12":  { password: "bm12-2026",  name: "أ. يزن الخطيب",  role: "teacher", classId: "BM12" }
+    "bm10":  { password: "bm10-2026",  name: "أ. محمد غرايبة",  role: "teacher", classId: "BM10" },
+    "bm11":  { password: "bm11-2026",  name: "أ. غيث عليان",  role: "teacher", classId: "BM11" },
+    "bm12":  { password: "bm12-2026",  name: "أ. محمد طويط",  role: "teacher", classId: "BM12" }
 };
 
 // ===== حدود التنبيهات =====
