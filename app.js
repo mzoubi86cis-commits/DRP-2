@@ -633,4 +633,87 @@ window.renderReports = renderReports; window.exportReportCSV = exportReportCSV; 
 window.addUserManual = addUserManual; window.changeUserPassword = changeUserPassword; window.removeUser = removeUser; window.exportBackup = exportBackup; window.importBackup = importBackup; window.syncFromCloud = syncToCloud;
 window.openEditUserModal = openEditUserModal; window.closeEditUserModal = closeEditUserModal; window.saveUserEdit = saveUserEdit;
 
+// ===== نافذة الإنذار وطباعته =====
+function showWarning(sid) {
+    const s = State.students.find(x => x.id === sid);
+    if (!s) return;
+    
+    // حساب الغياب (بالاعتماد على حالة الغياب فقط، بدون الهروب والتأخير)
+    const total = Attendance.countForWarnings(State, sid);
+    const level = getWarningLevel(total);
+    
+    if (level === 0) { 
+        alert("هذا الطالب منتظم ولا يحتاج إنذاراً."); 
+        return; 
+    }
+    
+    const absentDates = Attendance.getAbsentDates(State, sid);
+    const warningDate = todayISO();
+    const warningNumber = "غ/م/" + warningDate.replace(/-/g, "") + "/" + sid;
+    const classInfo = getClassById(s.classId);
+    const teacher = classInfo ? classInfo.teacher : "—";
+    const quality = classInfo ? classInfo.quality : "—";
+
+    let detailsHTML = "";
+    if (absentDates.length > 0) {
+        detailsHTML = "<p><strong>أيام الغياب:</strong></p>" +
+            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #dc3545; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + absentDates.join(" - ") + "</p>";
+    }
+
+    let titleText = "", titleClass = "", body = "", rec = "";
+    
+    if (level === 1) {
+        titleText = "📌 إنذار أول بغياب الطالب"; titleClass = "level-1";
+        body = "<p>تحية طيبة وبعد،</p>" +
+            "<p>يُهدي مدير " + SCHOOL_INFO.name + " إليكم أطيب التحيات.</p>" +
+            "<p>نلفت عنايتكم إلى أن الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، قد تجاوز عدد أيام غيابه الحد المسموح، حيث بلغ <span class=\"number-badge\">" + total + " أيام</span>، وهي " + numberToArabicWords(total) + ".</p>" +
+            detailsHTML +
+            "<p>وحرصًا منا على مصلحة الطالب، نرجو متابعة ابنكم وحثّه على الالتزام بالدوام.</p>";
+        rec = "<h4>📋 التوصيات:</h4><ul><li>متابعة دوام ابنكم اليومي.</li><li>التواصل مع مربي الصف.</li><li>حثّ الطالب على الالتزام بالدوام.</li></ul>";
+    } else if (level === 2) {
+        titleText = "⚠️ إنذار ثانٍ بغياب الطالب"; titleClass = "level-2";
+        body = "<p>تحية طيبة وبعد،</p>" +
+            "<p>بالإشارة إلى الإنذار الأول، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في الغياب، نلفت عنايتكم إلى أن عدد أيام غيابه بلغ <span class=\"number-badge\">" + total + " يومًا</span>.</p>" +
+            detailsHTML +
+            "<p>نرجو سرعة التواصل مع إدارة المدرسة خلال <strong>ثلاثة أيام</strong>.</p>";
+        rec = "<h4>⚠️ التوصيات العاجلة:</h4><ul><li>الحضور إلى المدرسة للاجتماع مع المربي والإدارة.</li><li>تقديم الأعذار الرسمية إن وُجدت.</li><li>المتابعة اليومية لدوام الطالب.</li></ul>";
+    } else {
+        titleText = "🚨 إنذار نهائي بغياب الطالب"; titleClass = "level-3";
+        body = "<p>تحية طيبة وبعد،</p>" +
+            "<p>بعد استنفاد الإنذارات السابقة، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في التغيب، نلفت عنايتكم إلى أن عدد أيام غيابه بلغ <span class=\"number-badge\">" + total + " يومًا</span>، وهو تجاوز جسيم للتعليمات.</p>" +
+            detailsHTML +
+            "<p>لذا نُرسل إليكم <strong style=\"color:#dc3545;\">الإنذار النهائي</strong>، وفي حال استمرار الغياب سنضطر لرفع الأمر إلى مديرية التربية.</p>";
+        rec = "<h4>🚨 إجراءات عاجلة:</h4><ul><li><strong>الحضور الفوري للمدرسة</strong> خلال يومين.</li><li>تقديم الأعذار الرسمية مصدّقة.</li><li>التوقيع على تعهد خطي.</li><li>في حال عدم الاستجابة: رفع الأمر لمديرية التربية.</li></ul>";
+    }
+
+    const html =
+        '<div class="letterhead"><div class="school-name">' + SCHOOL_INFO.name + '</div>' +
+        '<div class="school-info">' + SCHOOL_INFO.ministry + ' — ' + SCHOOL_INFO.directorate + '</div>' +
+        '<div class="school-info">العام الدراسي: ' + SCHOOL_INFO.year + ' — ' + (classInfo ? classInfo.name : '') + '</div>' +
+        '<div class="ref"><span>الرقم: ' + warningNumber + '</span><span>التاريخ: ' + warningDate + '</span></div></div>' +
+        '<div class="warning-title ' + titleClass + '">' + titleText + '</div>' +
+        '<div style="text-align:center; margin-bottom:20px;"><strong>المكرم ولي أمر الطالب / ' + s.nameAr + '</strong></div>' +
+        '<div class="student-info-box"><table><tr><td class="label">اسم الطالب:</td><td>' + s.nameAr + '</td><td class="label">رقم الطالب:</td><td>' + s.number + '</td></tr>' +
+        '<tr><td class="label">الصف:</td><td>' + (classInfo ? classInfo.name : '') + '</td><td class="label">أيام الغياب:</td><td><strong style="color:#dc3545;">' + total + ' يومًا</strong></td></tr></table></div>' +
+        '<div class="warning-body">' + body + '</div>' +
+        '<div class="recommendations">' + rec + '</div>' +
+        '<p style="text-align:center; margin-top:25px; font-weight:600; color:#1e3c72;">وتفضلوا بقبول فائق الاحترام</p>' +
+        '<div class="signatures">' +
+            '<div class="sig-box"><div class="sig-title">مربي الصف</div><div class="sig-line">' + teacher + '</div></div>' +
+            '<div class="sig-box"><div class="sig-title">ضابط الجودة</div><div class="sig-line">' + quality + '</div></div>' +
+            '<div class="sig-box"><div class="sig-title">مدير المدرسة</div><div class="sig-line">' + SCHOOL_INFO.principal + '</div></div>' +
+        '</div>' +
+        '<div class="warning-date">حُرِّر في: ' + warningDate + '</div>' +
+        '<div class="warning-actions"><button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button><button class="btn btn-secondary" onclick="closeWarning()">✖️ إغلاق</button></div>';
+
+    document.getElementById("warningPaper").innerHTML = html;
+    document.getElementById("warningModal").classList.add("show");
+}
+
+function closeWarning() { 
+    document.getElementById("warningModal").classList.remove("show"); 
+}
+
+
+
 window.startApp = startApp;
