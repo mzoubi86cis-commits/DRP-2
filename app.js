@@ -210,33 +210,30 @@ function setDailyStatus(sid, status) {
         State.dailySelections[sid].status = status;
     }
     
-    // 1. تحديث أزرار الحالة فقط
+    // 1. تحديث أزرار الحالة (حاضر/غائب/بعذر)
     refreshRowButtons(sid);
     updateDailyCounters();
     
-    // 2. تحديث زر الواتساب (إظهاره إذا كان غائباً، وإخفاؤه إذا كان حاضراً)
+    // 2. تحديث زر الواتساب
     const studentRow = document.querySelector('.status-group[data-sid="' + sid + '"]').closest('tr');
     if (studentRow) {
         const nameCell = studentRow.querySelector('td:nth-child(2)');
-        // البحث عن زر واتساب موجود مسبقاً
-        let waBtn = nameCell.querySelector('.whatsapp-absent-btn');
         
+        // ✅ إزالة أي زر واتساب قديم موجود في الخانة أولاً
+        const existingBtns = nameCell.querySelectorAll('.whatsapp-absent-btn');
+        existingBtns.forEach(btn => btn.remove());
+        
+        // ✅ إضافة زر واتساب واحد فقط إذا كان الطالب غائباً
         if (status === 'absent') {
-            if (!waBtn) {
-                // إنشاء زر الواتساب وإضافته
-                waBtn = document.createElement('button');
-                waBtn.className = 'btn btn-small whatsapp-absent-btn';
-                waBtn.style.cssText = 'background:#25D366; color:white; margin-left:5px; padding:2px 6px; font-size:0.8em;';
-                waBtn.innerHTML = '📱';
-                waBtn.title = 'إرسال رسالة غياب لولي الأمر';
-                waBtn.onclick = function() { sendAbsentWhatsApp(sid); };
-                nameCell.insertBefore(waBtn, nameCell.firstChild);
-            }
-        } else {
-            // إذا لم يكن غائباً، احذف الزر إن وجد
-            if (waBtn) {
-                waBtn.remove();
-            }
+            const waBtn = document.createElement('button');
+            waBtn.className = 'btn btn-small whatsapp-absent-btn';
+            waBtn.style.cssText = 'background:#25D366; color:white; margin-left:5px; padding:2px 6px; font-size:0.8em; border-radius:4px; border:none; cursor:pointer;';
+            waBtn.innerHTML = '📱';
+            waBtn.title = 'إرسال رسالة غياب لولي الأمر';
+            waBtn.onclick = function() { sendAbsentWhatsApp(sid); };
+            
+            // وضع الزر قبل اسم الطالب مباشرة
+            nameCell.insertBefore(waBtn, nameCell.firstChild);
         }
     }
 }
