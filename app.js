@@ -211,9 +211,32 @@ function setDailyStatus(sid, status) {
         State.dailySelections[sid].status = status;
     }
     
-    // إعادة رسم الجدول بالكامل لضمان عدم تكرار الأزرار
-    renderDailyTable();
+    // 1. تحديث أزرار الحالة (حاضر/غائب/بعذر) بدون إعادة رسم الجدول
+    refreshRowButtons(sid);
     updateDailyCounters();
+    
+    // 2. تحديث زر الواتساب بذكاء (بدون تكرار)
+    const studentRow = document.querySelector('.status-group[data-sid="' + sid + '"]').closest('tr');
+    if (studentRow) {
+        const nameCell = studentRow.querySelector('td:nth-child(2)');
+        
+        // إزالة أي زر واتساب قديم موجود
+        const existingBtn = nameCell.querySelector('.whatsapp-absent-btn');
+        if (existingBtn) existingBtn.remove();
+        
+        // إضافة زر واتساب جديد فقط إذا كان الطالب غائباً
+        if (status === 'absent') {
+            const waBtn = document.createElement('button');
+            waBtn.className = 'btn btn-small whatsapp-absent-btn';
+            waBtn.style.cssText = 'background:#25D366; color:white; margin-left:5px; padding:2px 6px; font-size:0.8em; border:none; border-radius:4px; cursor:pointer;';
+            waBtn.innerHTML = '📱';
+            waBtn.title = 'إرسال رسالة غياب لولي الأمر';
+            waBtn.onclick = function() { sendAbsentWhatsApp(sid); };
+            
+            // وضع الزر قبل اسم الطالب
+            nameCell.insertBefore(waBtn, nameCell.firstChild);
+        }
+    }
 }
 
 function refreshRowButtons(sid) {
