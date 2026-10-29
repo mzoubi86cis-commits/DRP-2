@@ -181,19 +181,19 @@ function renderDailyTable() {
         let escapeLabel = rec.escapes.length > 0 ? "🏃 هروب (" + rec.escapes.map(e=>"ح"+e.period).join("،") + ")" : "🏃 هروب";
         let lateLabel = rec.lates.length > 0 ? "⏰ تأخير (" + rec.lates.map(l=>"ح"+l.period+"/"+l.minutes+"د").join("،") + ")" : "⏰ تأخير";
 
-      // ✅ إضافة زر الواتساب (فقط إذا كان غائباً)
+        // ✅ نضع زر الواتساب داخل مجموعة الأزرار (status-group) وليس بجانب الاسم
         let whatsappBtn = '';
         if (rec.status === "absent") {
-            whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin-left:5px; padding:2px 6px; font-size:0.8em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
+            whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin-right:5px; padding:5px 10px; font-size:0.9em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
         }
-        
 
         const tr = document.createElement("tr");
         tr.innerHTML =
             '<td>' + s.id + '</td>' +
-            '<td>' + whatsappBtn + s.nameAr + '</td>' +
+            '<td>' + s.nameAr + '</td>' +
             '<td>' + s.number + '</td>' +
             '<td><div class="status-group" data-sid="' + s.id + '">' +
+                whatsappBtn + // الزر هنا
                 '<button class="status-btn ' + (rec.status === "present" ? "active-present" : "") + '" onclick="setDailyStatus(' + s.id + ', \'present\')">✅ حاضر</button>' +
                 '<button class="status-btn ' + (rec.status === "absent" ? "active-absent" : "") + '" onclick="setDailyStatus(' + s.id + ', \'absent\')">❌ غائب</button>' +
                 '<button class="status-btn ' + (rec.status === "excused" ? "active-excused" : "") + '" onclick="setDailyStatus(' + s.id + ', \'excused\')">📝 بعذر</button>' +
@@ -212,32 +212,8 @@ function setDailyStatus(sid, status) {
         State.dailySelections[sid].status = status;
     }
     
-    // 1. تحديث أزرار الحالة (حاضر/غائب/بعذر) بدون إعادة رسم الجدول
-    refreshRowButtons(sid);
-    updateDailyCounters();
-    
-    // 2. تحديث زر الواتساب بذكاء (بدون تكرار)
-    const studentRow = document.querySelector('.status-group[data-sid="' + sid + '"]').closest('tr');
-    if (studentRow) {
-        const nameCell = studentRow.querySelector('td:nth-child(2)');
-        
-        // إزالة أي زر واتساب قديم موجود
-        const existingBtn = nameCell.querySelector('.whatsapp-absent-btn');
-        if (existingBtn) existingBtn.remove();
-        
-        // إضافة زر واتساب جديد فقط إذا كان الطالب غائباً
-        if (status === 'absent') {
-            const waBtn = document.createElement('button');
-            waBtn.className = 'btn btn-small whatsapp-absent-btn';
-            waBtn.style.cssText = 'background:#25D366; color:white; margin-left:5px; padding:2px 6px; font-size:0.8em; border:none; border-radius:4px; cursor:pointer;';
-            waBtn.innerHTML = '📱';
-            waBtn.title = 'إرسال رسالة غياب لولي الأمر';
-            waBtn.onclick = function() { sendAbsentWhatsApp(sid); };
-            
-            // وضع الزر قبل اسم الطالب
-            nameCell.insertBefore(waBtn, nameCell.firstChild);
-        }
-    }
+    // إعادة رسم الجدول بالكامل (هذا يضمن عمل الأزرار وعدم تكرار واتساب)
+    renderDailyTable();
 }
 
 function refreshRowButtons(sid) {
