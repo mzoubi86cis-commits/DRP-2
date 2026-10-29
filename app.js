@@ -181,10 +181,10 @@ function renderDailyTable() {
         let escapeLabel = rec.escapes.length > 0 ? "🏃 هروب (" + rec.escapes.map(e=>"ح"+e.period).join("،") + ")" : "🏃 هروب";
         let lateLabel = rec.lates.length > 0 ? "⏰ تأخير (" + rec.lates.map(l=>"ح"+l.period+"/"+l.minutes+"د").join("،") + ")" : "⏰ تأخير";
 
-        // ✅ نضع زر الواتساب داخل مجموعة الأزرار (status-group) وليس بجانب الاسم
+        // وضع زر الواتساب في عمود منفصل لتجنب التداخل
         let whatsappBtn = '';
         if (rec.status === "absent") {
-            whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin-right:5px; padding:5px 10px; font-size:0.9em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
+            whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin:0; padding:5px 10px; font-size:0.9em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
         }
 
         const tr = document.createElement("tr");
@@ -192,8 +192,8 @@ function renderDailyTable() {
             '<td>' + s.id + '</td>' +
             '<td>' + s.nameAr + '</td>' +
             '<td>' + s.number + '</td>' +
+            '<td style="text-align:center;">' + whatsappBtn + '</td>' +  /* العمود الجديد */
             '<td><div class="status-group" data-sid="' + s.id + '">' +
-                whatsappBtn + // الزر هنا
                 '<button class="status-btn ' + (rec.status === "present" ? "active-present" : "") + '" onclick="setDailyStatus(' + s.id + ', \'present\')">✅ حاضر</button>' +
                 '<button class="status-btn ' + (rec.status === "absent" ? "active-absent" : "") + '" onclick="setDailyStatus(' + s.id + ', \'absent\')">❌ غائب</button>' +
                 '<button class="status-btn ' + (rec.status === "excused" ? "active-excused" : "") + '" onclick="setDailyStatus(' + s.id + ', \'excused\')">📝 بعذر</button>' +
@@ -212,13 +212,8 @@ function setDailyStatus(sid, status) {
         State.dailySelections[sid].status = status;
     }
     
-    // الحل المضمون: مسح محتوى الجدول بالكامل وإعادة بنائه
-    // هذا يضمن أن زر الواتساب القديم يُمسح، ويظهر الجديد في مكانه الصحيح
-    const tbody = document.getElementById("dailyTable");
-    if (tbody) {
-        tbody.innerHTML = ""; 
-        renderDailyTable(); 
-    }
+    // إعادة رسم الجدول بالكامل لضمان عدم تكرار زر الواتساب
+    renderDailyTable();
 }
 
 function refreshRowButtons(sid) {
