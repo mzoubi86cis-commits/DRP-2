@@ -181,12 +181,12 @@ function renderDailyTable() {
         let escapeLabel = rec.escapes.length > 0 ? "🏃 هروب (" + rec.escapes.map(e=>"ح"+e.period).join("،") + ")" : "🏃 هروب";
         let lateLabel = rec.lates.length > 0 ? "⏰ تأخير (" + rec.lates.map(l=>"ح"+l.period+"/"+l.minutes+"د").join("،") + ")" : "⏰ تأخير";
 
- /*     // ✅ إضافة زر الواتساب (فقط إذا كان غائباً)
+      // ✅ إضافة زر الواتساب (فقط إذا كان غائباً)
         let whatsappBtn = '';
         if (rec.status === "absent") {
             whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin-left:5px; padding:2px 6px; font-size:0.8em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
         }
-        */
+        
 
         const tr = document.createElement("tr");
         tr.innerHTML =
