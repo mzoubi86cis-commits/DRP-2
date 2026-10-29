@@ -1,8 +1,7 @@
 /* ==========================================================================
-   app.js - النسخة النهائية (شاملة كل التعديلات)
+   app.js - النسخة النهائية المستقرة (حل مشاكل الأزرار والواتساب)
    ========================================================================== */
 
-// ===== حالة التطبيق =====
 const State = {
     students: [], records: [], users: {}, currentUser: null,
     currentClassId: null, dailyDate: todayISO(), dailySelections: {},
@@ -159,7 +158,9 @@ function renderStudentsTable() {
     });
 }
 
-// ===== التسجيل اليومي =====
+// ==========================================================================
+//   التسجيل اليومي - (تم حل المشكلة هنا)
+// ==========================================================================
 function renderDailyTable() {
     const tbody = document.getElementById("dailyTable");
     if (!tbody || !State.currentClassId) return;
@@ -181,18 +182,15 @@ function renderDailyTable() {
         let escapeLabel = rec.escapes.length > 0 ? "🏃 هروب (" + rec.escapes.map(e=>"ح"+e.period).join("،") + ")" : "🏃 هروب";
         let lateLabel = rec.lates.length > 0 ? "⏰ تأخير (" + rec.lates.map(l=>"ح"+l.period+"/"+l.minutes+"د").join("،") + ")" : "⏰ تأخير";
 
-        // وضع زر الواتساب في عمود منفصل لتجنب التداخل
-        let whatsappBtn = '';
-        if (rec.status === "absent") {
-            whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin:0; padding:5px 10px; font-size:0.9em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
-        }
+        // زر الواتساب مخفي في البداية (حسب الحالة)
+        let displayStyle = (rec.status === "absent") ? "inline-block" : "none";
+        let waBtn = '<button class="btn btn-small" id="wa-btn-' + s.id + '" style="background:#25D366; color:white; display:' + displayStyle + '; margin-left:10px; padding:5px 10px; font-size:0.9em; border:none; border-radius:4px; cursor:pointer;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
 
         const tr = document.createElement("tr");
         tr.innerHTML =
             '<td>' + s.id + '</td>' +
-            '<td>' + s.nameAr + '</td>' +
+            '<td>' + s.nameAr + ' ' + waBtn + '</td>' + // الزر بجانب الاسم مباشرة
             '<td>' + s.number + '</td>' +
-            '<td style="text-align:center;">' + whatsappBtn + '</td>' +  /* العمود الجديد */
             '<td><div class="status-group" data-sid="' + s.id + '">' +
                 '<button class="status-btn ' + (rec.status === "present" ? "active-present" : "") + '" onclick="setDailyStatus(' + s.id + ', \'present\')">✅ حاضر</button>' +
                 '<button class="status-btn ' + (rec.status === "absent" ? "active-absent" : "") + '" onclick="setDailyStatus(' + s.id + ', \'absent\')">❌ غائب</button>' +
@@ -205,6 +203,7 @@ function renderDailyTable() {
     updateDailyCounters();
 }
 
+// ✅ دالة سريعة وبسيطة جداً لتغيير الحالة (بدون إعادة رسم الجدول)
 function setDailyStatus(sid, status) {
     if (!State.dailySelections[sid]) {
         State.dailySelections[sid] = { status: status, escapes: [], lates: [] };
@@ -212,8 +211,19 @@ function setDailyStatus(sid, status) {
         State.dailySelections[sid].status = status;
     }
     
-    // إعادة رسم الجدول بالكامل لضمان عدم تكرار زر الواتساب
-    renderDailyTable();
+    // 1. تحديث الأزرار الأساسية فقط (بدون تجميد)
+    refreshRowButtons(sid);
+    updateDailyCounters();
+    
+    // 2. إظهار أو إخفاء زر الواتساب بذكاء
+    const waBtn = document.getElementById("wa-btn-" + sid);
+    if (waBtn) {
+        if (status === 'absent') {
+            waBtn.style.display = "inline-block";
+        } else {
+            waBtn.style.display = "none";
+        }
+    }
 }
 
 function refreshRowButtons(sid) {
@@ -400,30 +410,27 @@ async function deleteRecord(rid, sid) {
     if (await syncToCloud()) openStudent(sid);
 }
 
-// ===== إرسال واتساب =====
+// ===== إرسال واتساب (صفحة الطالب) =====
 function sendWhatsApp(sid) {
     const s = State.students.find(x => x.id === sid);
     if (!s) return;
-    
     const total = Attendance.countForAlerts(State, sid);
     const level = getWarningLevel(total);
     const classInfo = getClassById(s.classId);
-    
     if (level === 0) { alert("هذا الطالب منتظم ولا يحتاج إنذاراً."); return; }
-
     let warningType = level === 1 ? "إنذار أول" : level === 2 ? "إنذار ثانٍ" : "إنذار نهائي";
-    
-    let msg = `*مدرسة الطرة الثانوية للبنين*\n\n`;
-    msg += `تحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\n`;
-    msg += `نحيطكم علماً بأن ابنكم قد تجاوز عدد أيام الغياب المسموح بها، وقد بلغت حتى تاريخ اليوم *${total} أيام*.\n\n`;
-    msg += `⚠️ *${warningType} بغياب الطالب*\n\n`;
-    msg += `الصف: ${classInfo ? classInfo.name : ''}\n`;
-    msg += `رقم الطالب: ${s.number}\n\n`;
-    msg += `نرجو من سيادتكم التكرم بمتابعة دوام ابنكم، والتواصل مع إدارة المدرسة في أقرب وقت.\n\n`;
-    msg += `ولكم منا فائق الاحترام والتقدير.`;
+    let msg = `*مدرسة الطرة الثانوية للبنين*\n\nتحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\nنحيطكم علماً بأن ابنكم قد تجاوز عدد أيام الغياب المسموح بها، وقد بلغت حتى تاريخ اليوم *${total} أيام*.\n\n⚠️ *${warningType} بغياب الطالب*\n\nالصف: ${classInfo ? classInfo.name : ''}\nرقم الطالب: ${s.number}\n\nنرجو من سيادتكم التكرم بمتابعة دوام ابنكم، والتواصل مع إدارة المدرسة في أقرب وقت.\n\nولكم منا فائق الاحترام والتقدير.`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
 
-    const encodedMsg = encodeURIComponent(msg);
-    window.open('https://wa.me/?text=' + encodedMsg, '_blank');
+// ===== إرسال واتساب (التسجيل اليومي) =====
+function sendAbsentWhatsApp(sid) {
+    const s = State.students.find(x => x.id === sid);
+    if (!s) return;
+    const classInfo = getClassById(s.classId);
+    const dateStr = formatDateAr(State.dailyDate);
+    let msg = `*مدرسة الطرة الثانوية للبنين*\n\nتحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\nنحيطكم علماً بأن ابنكم قد تغيب اليوم (${dateStr}) عن الدوام المدرسي.\n\nالصف: ${classInfo ? classInfo.name : ''}\nنرجو من سيادتكم التكرم بتزويدنا بعذر الغياب، أو التواصل مع إدارة المدرسة.\n\nولكم منا فائق الاحترام والتقدير.`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ===== التقارير =====
@@ -458,7 +465,7 @@ function renderAlerts() {
     }).join("");
 }
 
-// ===== الإدارة =====
+// ===== إدارة الطلاب والمستخدمين =====
 function renderAdminStudents() {
     const select = document.getElementById("adminClassSelect");
     if (!select) return;
@@ -497,52 +504,18 @@ function importFromExcel() {
     });
 }
 
-// ===== إدارة المستخدمين =====
 function renderAdminUsers() {
     const select = document.getElementById("newClassId");
-    if (select && !select.innerHTML.trim()) {
-        select.innerHTML = '<option value="">— بدون —</option>' + 
-            CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
-    }
-    
+    if (select && !select.innerHTML.trim()) select.innerHTML = '<option value="">—</option>' + CLASSES.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join("");
     const tbody = document.getElementById("usersTable");
-    if (!tbody) return;
     tbody.innerHTML = "";
-    
     Object.keys(State.users).forEach(username => {
         const u = State.users[username];
-        
-        // إظهار الأزرار للجميع، ولكن سيتم التحقق من الصلاحية عند الضغط
-        let actionButtons = 
-            '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑 كلمة المرور</button> ' +
-            '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')">✏️ تعديل</button>';
-
-        const tr = document.createElement("tr");
-        tr.innerHTML =
-            '<td><strong>' + username + '</strong></td>' +
-            '<td>' + u.name + '</td>' +
-            '<td>' + (u.role === "admin" ? "👑 مدير" : "👨‍🏫 معلم") + '</td>' +
-            '<td>' + (u.classId || '—') + '</td>' +
-            '<td>' + actionButtons + '</td>';
-        tbody.appendChild(tr);
+        tbody.innerHTML += '<tr><td><strong>' + username + '</strong></td><td>' + u.name + '</td><td>' + (u.role === "admin" ? "👑" : "👨‍🏫") + '</td><td>' + (u.classId || '—') + '</td><td>' +
+            '<button class="btn btn-small btn-warning" onclick="changeUserPassword(\'' + username + '\')">🔑</button> ' +
+            '<button class="btn btn-small btn-info" onclick="openEditUserModal(\'' + username + '\')">✏️</button>' +
+            '</td></tr>';
     });
-}
-
-function openEditUserModal(username) {
-    // التحقق: هل الشخص الذي يفتح النافذة هو مدير؟
-    if (!State.currentUser || State.currentUser.role !== 'admin') {
-        alert("❌ عذراً، هذه الصلاحية للمدير فقط.");
-        return;
-    }
-    
-    const user = State.users[username];
-    if (!user) return;
-    
-    document.getElementById("editUserUsername").value = username;
-    document.getElementById("editUserName").value = user.name;
-    document.getElementById("editUserPassword").value = user.password;
-    document.getElementById("editUserTarget").textContent = "حساب: " + username;
-    document.getElementById("editUserModal").style.display = "flex";
 }
 
 function addUserManual() {
@@ -560,7 +533,6 @@ function addUserManual() {
 function changeUserPassword(u) { const p = prompt("كلمة المرور الجديدة لـ " + u); if (p) { Admin.changePassword(State, u, p); autoSave(300); } }
 function removeUser(u) { if (confirm("حذف " + u + "؟")) { Admin.removeUser(State, u); autoSave(300); renderAdminUsers(); } }
 
-// ===== نافذة تعديل المستخدم =====
 function openEditUserModal(username) {
     const user = State.users[username];
     if (!user) return;
@@ -571,24 +543,16 @@ function openEditUserModal(username) {
     document.getElementById("editUserModal").style.display = "flex";
 }
 
-function closeEditUserModal() {
-    document.getElementById("editUserModal").style.display = "none";
-}
+function closeEditUserModal() { document.getElementById("editUserModal").style.display = "none"; }
 
 async function saveUserEdit() {
     const username = document.getElementById("editUserUsername").value;
     const newName = document.getElementById("editUserName").value.trim();
     const newPassword = document.getElementById("editUserPassword").value.trim();
-
     if (!newName) return alert("❌ يجب إدخال الاسم");
     State.users[username].name = newName;
     if (newPassword) State.users[username].password = newPassword;
-
-    if (await syncToCloud()) {
-        alert("✅ تم تعديل البيانات بنجاح");
-        closeEditUserModal();
-        renderAdminUsers();
-    }
+    if (await syncToCloud()) { alert("✅ تم تعديل البيانات"); closeEditUserModal(); renderAdminUsers(); }
 }
 
 // ===== النسخ الاحتياطي =====
@@ -642,110 +606,11 @@ async function startApp() {
 
 // تصدير الدوال
 window.openPeriodModal = openPeriodModal; window.selectPeriod = selectPeriod; window.selectMinutes = selectMinutes; window.confirmPeriodSelection = confirmPeriodSelection; window.cancelPeriodSelection = cancelPeriodSelection;
-window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selectClass = selectClass; window.openStudent = openStudent; window.deleteRecord = deleteRecord; window.showWarning = showWarning; window.sendWhatsApp = sendWhatsApp;
+window.setDailyStatus = setDailyStatus; window.navigate = navigate; window.selectClass = selectClass; window.openStudent = openStudent; window.deleteRecord = deleteRecord; window.showWarning = showWarning; window.sendWhatsApp = sendWhatsApp; window.sendAbsentWhatsApp = sendAbsentWhatsApp;
 window.saveDailyRecord = saveDailyRecord; window.markAll = markAll; window.resetAll = resetAll; window.setDateToday = setDateToday; window.changeDay = changeDay;
 window.renderReports = renderReports; window.exportReportCSV = exportReportCSV; window.addStudentManual = addStudentManual; window.removeStudent = removeStudent; window.importFromExcel = importFromExcel;
 window.addUserManual = addUserManual; window.changeUserPassword = changeUserPassword; window.removeUser = removeUser; window.exportBackup = exportBackup; window.importBackup = importBackup; window.syncFromCloud = syncToCloud;
 window.openEditUserModal = openEditUserModal; window.closeEditUserModal = closeEditUserModal; window.saveUserEdit = saveUserEdit;
-
-// ===== نافذة الإنذار وطباعته =====
-function showWarning(sid) {
-    const s = State.students.find(x => x.id === sid);
-    if (!s) return;
-    
-    // حساب الغياب (بالاعتماد على حالة الغياب فقط، بدون الهروب والتأخير)
-    const total = Attendance.countForWarnings(State, sid);
-    const level = getWarningLevel(total);
-    
-    if (level === 0) { 
-        alert("هذا الطالب منتظم ولا يحتاج إنذاراً."); 
-        return; 
-    }
-    
-    const absentDates = Attendance.getAbsentDates(State, sid);
-    const warningDate = todayISO();
-    const warningNumber = "غ/م/" + warningDate.replace(/-/g, "") + "/" + sid;
-    const classInfo = getClassById(s.classId);
-    const teacher = classInfo ? classInfo.teacher : "—";
-    const quality = classInfo ? classInfo.quality : "—";
-
-    let detailsHTML = "";
-    if (absentDates.length > 0) {
-        detailsHTML = "<p><strong>أيام الغياب:</strong></p>" +
-            "<p style=\"text-indent:0; background:#f8f9fa; padding:10px 15px; border-right:3px solid #dc3545; border-radius:5px; font-family:'Courier New', monospace; direction:ltr; text-align:left; font-size:0.92em;\">" + absentDates.join(" - ") + "</p>";
-    }
-
-    let titleText = "", titleClass = "", body = "", rec = "";
-    
-    if (level === 1) {
-        titleText = "📌 إنذار أول بغياب الطالب"; titleClass = "level-1";
-        body = "<p>تحية طيبة وبعد،</p>" +
-            "<p>يُهدي مدير " + SCHOOL_INFO.name + " إليكم أطيب التحيات.</p>" +
-            "<p>نلفت عنايتكم إلى أن الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، قد تجاوز عدد أيام غيابه الحد المسموح، حيث بلغ <span class=\"number-badge\">" + total + " أيام</span>، وهي " + numberToArabicWords(total) + ".</p>" +
-            detailsHTML +
-            "<p>وحرصًا منا على مصلحة الطالب، نرجو متابعة ابنكم وحثّه على الالتزام بالدوام.</p>";
-        rec = "<h4>📋 التوصيات:</h4><ul><li>متابعة دوام ابنكم اليومي.</li><li>التواصل مع مربي الصف.</li><li>حثّ الطالب على الالتزام بالدوام.</li></ul>";
-    } else if (level === 2) {
-        titleText = "⚠️ إنذار ثانٍ بغياب الطالب"; titleClass = "level-2";
-        body = "<p>تحية طيبة وبعد،</p>" +
-            "<p>بالإشارة إلى الإنذار الأول، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في الغياب، نلفت عنايتكم إلى أن عدد أيام غيابه بلغ <span class=\"number-badge\">" + total + " يومًا</span>.</p>" +
-            detailsHTML +
-            "<p>نرجو سرعة التواصل مع إدارة المدرسة خلال <strong>ثلاثة أيام</strong>.</p>";
-        rec = "<h4>⚠️ التوصيات العاجلة:</h4><ul><li>الحضور إلى المدرسة للاجتماع مع المربي والإدارة.</li><li>تقديم الأعذار الرسمية إن وُجدت.</li><li>المتابعة اليومية لدوام الطالب.</li></ul>";
-    } else {
-        titleText = "🚨 إنذار نهائي بغياب الطالب"; titleClass = "level-3";
-        body = "<p>تحية طيبة وبعد،</p>" +
-            "<p>بعد استنفاد الإنذارات السابقة، واستمرار الطالب/ <strong>" + s.nameAr + "</strong>، صاحب الرقم <strong>" + s.number + "</strong>، في التغيب، نلفت عنايتكم إلى أن عدد أيام غيابه بلغ <span class=\"number-badge\">" + total + " يومًا</span>، وهو تجاوز جسيم للتعليمات.</p>" +
-            detailsHTML +
-            "<p>لذا نُرسل إليكم <strong style=\"color:#dc3545;\">الإنذار النهائي</strong>، وفي حال استمرار الغياب سنضطر لرفع الأمر إلى مديرية التربية.</p>";
-        rec = "<h4>🚨 إجراءات عاجلة:</h4><ul><li><strong>الحضور الفوري للمدرسة</strong> خلال يومين.</li><li>تقديم الأعذار الرسمية مصدّقة.</li><li>التوقيع على تعهد خطي.</li><li>في حال عدم الاستجابة: رفع الأمر لمديرية التربية.</li></ul>";
-    }
-
-    const html =
-        '<div class="letterhead"><div class="school-name">' + SCHOOL_INFO.name + '</div>' +
-        '<div class="school-info">' + SCHOOL_INFO.ministry + ' — ' + SCHOOL_INFO.directorate + '</div>' +
-        '<div class="school-info">العام الدراسي: ' + SCHOOL_INFO.year + ' — ' + (classInfo ? classInfo.name : '') + '</div>' +
-        '<div class="ref"><span>الرقم: ' + warningNumber + '</span><span>التاريخ: ' + warningDate + '</span></div></div>' +
-        '<div class="warning-title ' + titleClass + '">' + titleText + '</div>' +
-        '<div style="text-align:center; margin-bottom:20px;"><strong>المكرم ولي أمر الطالب / ' + s.nameAr + '</strong></div>' +
-        '<div class="student-info-box"><table><tr><td class="label">اسم الطالب:</td><td>' + s.nameAr + '</td><td class="label">رقم الطالب:</td><td>' + s.number + '</td></tr>' +
-        '<tr><td class="label">الصف:</td><td>' + (classInfo ? classInfo.name : '') + '</td><td class="label">أيام الغياب:</td><td><strong style="color:#dc3545;">' + total + ' يومًا</strong></td></tr></table></div>' +
-        '<div class="warning-body">' + body + '</div>' +
-        '<div class="recommendations">' + rec + '</div>' +
-        '<p style="text-align:center; margin-top:25px; font-weight:600; color:#1e3c72;">وتفضلوا بقبول فائق الاحترام</p>' +
-        '<div class="signatures">' +
-            '<div class="sig-box"><div class="sig-title">مربي الصف</div><div class="sig-line">' + teacher + '</div></div>' +
-            '<div class="sig-box"><div class="sig-title">ضابط الجودة</div><div class="sig-line">' + quality + '</div></div>' +
-            '<div class="sig-box"><div class="sig-title">مدير المدرسة</div><div class="sig-line">' + SCHOOL_INFO.principal + '</div></div>' +
-        '</div>' +
-        '<div class="warning-date">حُرِّر في: ' + warningDate + '</div>' +
-        '<div class="warning-actions"><button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button><button class="btn btn-secondary" onclick="closeWarning()">✖️ إغلاق</button></div>';
-
-    document.getElementById("warningPaper").innerHTML = html;
-    document.getElementById("warningModal").classList.add("show");
-}
-
-function closeWarning() { 
-    document.getElementById("warningModal").classList.remove("show"); 
-}
-
-// ===== إرسال واتساب للغياب اليومي =====
-function sendAbsentWhatsApp(sid) {
-    const s = State.students.find(x => x.id === sid);
-    if (!s) return;
-    
-    const classInfo = getClassById(s.classId);
-    const dateStr = formatDateAr(State.dailyDate);
-
-    let msg = `*مدرسة الطرة الثانوية للبنين*\n\n`;
-    msg += `تحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\n`;
-    msg += `نحيطكم علماً بأن ابنكم قد تغيب اليوم (${dateStr}) عن الدوام المدرسي.\n\n`;
-    msg += `الصف: ${classInfo ? classInfo.name : ''}\n`;
-    msg += `نرجو من سيادتكم التكرم بتزويدنا بعذر الغياب، أو التواصل مع إدارة المدرسة.\n\n`;
-    msg += `ولكم منا فائق الاحترام والتقدير.`;
-
-    const encodedMsg = encodeURIComponent(msg);
-    window.open('https://wa.me/?text=' + encodedMsg, '_blank');
-}
+window.showWarning = showWarning; window.closeWarning = closeWarning;
 
 window.startApp = startApp;
