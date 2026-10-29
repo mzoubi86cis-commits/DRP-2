@@ -753,7 +753,13 @@ footer { text-align: center; padding: 25px; color: var(--muted); margin-top: 40p
     .recommendations h4 { font-size: 10pt; margin-bottom: 4px; }
     .recommendations ul { padding-right: 18px; }
     .recommendations li { font-size: 9pt; margin-bottom: 1px; }
-    .signatures { margin-top: 12px; padding-top: 6px; gap: 8px; }
+    .signatures { 
+    margin-top: 12px; 
+    padding-top: 6px; 
+    gap: 8px; 
+    display: grid !important; 
+    grid-template-columns: repeat(3, 1fr) !important; 
+}
     .signatures .sig-box { padding: 3px; }
     .signatures .sig-title { font-size: 9.5pt; margin-bottom: 15px; }
     .signatures .sig-line { font-size: 9.5pt; padding-top: 3px; }
