@@ -205,27 +205,23 @@ function renderDailyTable() {
 
 // ✅ دالة سريعة وبسيطة جداً لتغيير الحالة (بدون إعادة رسم الجدول)
 function setDailyStatus(sid, status) {
+    // 1. تحديث البيانات في الذاكرة
     if (!State.dailySelections[sid]) {
         State.dailySelections[sid] = { status: status, escapes: [], lates: [] };
     } else {
         State.dailySelections[sid].status = status;
     }
     
-    // 1. تحديث الأزرار الأساسية فقط (بدون تجميد)
+    // 2. تحديث أزرار الحالة فقط (لتغيير اللون فوراً)
     refreshRowButtons(sid);
     updateDailyCounters();
     
-    // 2. إظهار أو إخفاء زر الواتساب بذكاء
+    // 3. إظهار أو إخفاء زر الواتساب
     const waBtn = document.getElementById("wa-btn-" + sid);
     if (waBtn) {
-        if (status === 'absent') {
-            waBtn.style.display = "inline-block";
-        } else {
-            waBtn.style.display = "none";
-        }
+        waBtn.style.display = (status === 'absent') ? "inline-block" : "none";
     }
 }
-
 function refreshRowButtons(sid) {
     const group = document.querySelector('.status-group[data-sid="' + sid + '"]');
     if (!group) return;
