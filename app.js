@@ -180,9 +180,17 @@ function renderDailyTable() {
         let escapeLabel = rec.escapes.length > 0 ? "🏃 هروب (" + rec.escapes.map(e=>"ح"+e.period).join("،") + ")" : "🏃 هروب";
         let lateLabel = rec.lates.length > 0 ? "⏰ تأخير (" + rec.lates.map(l=>"ح"+l.period+"/"+l.minutes+"د").join("،") + ")" : "⏰ تأخير";
 
+                // إضافة زر الواتساب إذا كان الطالب غائباً
+        let whatsappBtn = '';
+        if (rec.status === "absent") {
+            whatsappBtn = '<button class="btn btn-small" style="background:#25D366; color:white; margin-right:5px;" onclick="sendAbsentWhatsApp(' + s.id + ')" title="إرسال رسالة غياب لولي الأمر">📱</button>';
+        }
+
         const tr = document.createElement("tr");
         tr.innerHTML =
-            '<td>' + s.id + '</td><td>' + s.nameAr + '</td><td>' + s.number + '</td>' +
+            '<td>' + s.id + '</td>' +
+            '<td>' + whatsappBtn + s.nameAr + '</td>' +
+            '<td>' + s.number + '</td>' +
             '<td><div class="status-group" data-sid="' + s.id + '">' +
                 '<button class="status-btn ' + (rec.status === "present" ? "active-present" : "") + '" onclick="setDailyStatus(' + s.id + ', \'present\')">✅ حاضر</button>' +
                 '<button class="status-btn ' + (rec.status === "absent" ? "active-absent" : "") + '" onclick="setDailyStatus(' + s.id + ', \'absent\')">❌ غائب</button>' +
@@ -196,9 +204,14 @@ function renderDailyTable() {
 }
 
 function setDailyStatus(sid, status) {
-    if (!State.dailySelections[sid]) State.dailySelections[sid] = { status: status, escapes: [], lates: [] };
-    else State.dailySelections[sid].status = status;
-    refreshRowButtons(sid); updateDailyCounters();
+    if (!State.dailySelections[sid]) {
+        State.dailySelections[sid] = { status: status, escapes: [], lates: [] };
+    } else {
+        State.dailySelections[sid].status = status;
+    }
+    
+    // إعادة رسم الجدول بالكامل لتحديث زر الواتساب
+    renderDailyTable();
 }
 
 function refreshRowButtons(sid) {
@@ -714,6 +727,23 @@ function closeWarning() {
     document.getElementById("warningModal").classList.remove("show"); 
 }
 
+// ===== إرسال واتساب للغياب اليومي =====
+function sendAbsentWhatsApp(sid) {
+    const s = State.students.find(x => x.id === sid);
+    if (!s) return;
+    
+    const classInfo = getClassById(s.classId);
+    const dateStr = formatDateAr(State.dailyDate);
 
+    let msg = `*مدرسة الطرة الثانوية للبنين*\n\n`;
+    msg += `تحية طيبة لولي أمر الطالب: *${s.nameAr}*\n\n`;
+    msg += `نحيطكم علماً بأن ابنكم قد تغيب اليوم (${dateStr}) عن الدوام المدرسي.\n\n`;
+    msg += `الصف: ${classInfo ? classInfo.name : ''}\n`;
+    msg += `نرجو من سيادتكم التكرم بتزويدنا بعذر الغياب، أو التواصل مع إدارة المدرسة.\n\n`;
+    msg += `ولكم منا فائق الاحترام والتقدير.`;
+
+    const encodedMsg = encodeURIComponent(msg);
+    window.open('https://wa.me/?text=' + encodedMsg, '_blank');
+}
 
 window.startApp = startApp;
