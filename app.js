@@ -212,8 +212,13 @@ function setDailyStatus(sid, status) {
         State.dailySelections[sid].status = status;
     }
     
-    // إعادة رسم الجدول بالكامل (هذا يضمن عمل الأزرار وعدم تكرار واتساب)
-    renderDailyTable();
+    // الحل المضمون: مسح محتوى الجدول بالكامل وإعادة بنائه
+    // هذا يضمن أن زر الواتساب القديم يُمسح، ويظهر الجديد في مكانه الصحيح
+    const tbody = document.getElementById("dailyTable");
+    if (tbody) {
+        tbody.innerHTML = ""; 
+        renderDailyTable(); 
+    }
 }
 
 function refreshRowButtons(sid) {
